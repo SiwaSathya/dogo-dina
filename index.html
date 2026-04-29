@@ -21,6 +21,20 @@
         
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .table-row-hover:hover { background-color: #fafafa; transition: 0.2s; }
+        
+        .btn-pagination {
+            transition: all 0.2s;
+            border: 1px solid #e5e1d8;
+        }
+        .btn-pagination:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .btn-pagination:not(:disabled):hover {
+            background-color: #8fa88a;
+            color: white;
+            border-color: #8fa88a;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -32,7 +46,6 @@
             </div>
             <h2 class="text-amber-900 font-bold tracking-wider text-lg">PETGROOM PRO</h2>
         </div>
-
         <nav class="space-y-2 flex-1">
             <a href="#" class="flex items-center gap-3 px-4 py-3 bg-white/50 rounded-2xl text-amber-900 font-semibold shadow-sm">
                 <i class="fas fa-th-large w-5"></i> Dashboard
@@ -62,132 +75,173 @@
 
         <div class="grid grid-cols-12 gap-8">
             <div class="col-span-12 lg:col-span-3 space-y-6">
-                <div class="bg-card-green p-6 rounded-[32px] text-white relative h-36 flex flex-col justify-between shadow-sm">
+                <div class="bg-card-green p-6 rounded-[32px] text-white relative h-32 flex flex-col justify-between shadow-sm">
                     <p class="text-xs font-bold uppercase tracking-widest opacity-80">Active Appointments</p>
                     <div class="flex justify-between items-end">
-                        <span class="text-4xl font-bold" id="stat-active">18</span>
-                        <i class="fas fa-square text-2xl opacity-40"></i>
+                        <span class="text-3xl font-bold" id="stat-active">-</span>
+                        <i class="fas fa-calendar-check text-xl opacity-40"></i>
                     </div>
                 </div>
                 
-                <div class="bg-card-yellow p-6 rounded-[32px] text-amber-900 relative h-36 flex flex-col justify-between shadow-sm">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-60">New Pets This Week</p>
+                <div class="bg-card-yellow p-6 rounded-[32px] text-amber-900 relative h-32 flex flex-col justify-between shadow-sm">
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-60">Total Pets</p>
                     <div class="flex justify-between items-end">
-                        <span class="text-4xl font-bold" id="stat-total">12</span>
-                        <i class="fas fa-square text-2xl opacity-20"></i>
+                        <span class="text-3xl font-bold" id="stat-total">-</span>
+                        <i class="fas fa-dog text-xl opacity-20"></i>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-[32px] text-amber-950 border-b-4 border-green-500 h-36 flex flex-col justify-between custom-shadow">
+                <div class="bg-white p-6 rounded-[32px] text-amber-950 border-b-4 border-green-500 h-32 flex flex-col justify-between custom-shadow">
                     <p class="text-xs font-bold uppercase tracking-widest opacity-40">Total Revenue</p>
-                    <span class="text-3xl font-bold text-green-700" id="stat-revenue">Rp 5.4M</span>
+                    <span class="text-2xl font-bold text-green-700" id="stat-revenue">Rp 0</span>
                 </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-9 bg-white rounded-[40px] p-8 custom-shadow min-h-[500px]">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-amber-900/40 text-sm font-bold uppercase tracking-tighter border-b border-amber-50">
-                            <th class="pb-6 w-12 text-center">ID</th>
-                            <th class="pb-6">Customer</th>
-                            <th class="pb-6">Pet</th>
-                            <th class="pb-6">Service</th>
-                            <th class="pb-6">Status</th>
-                            <th class="pb-6">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="api-table-body" class="text-[#5d4037] font-medium">
-                        <tr>
-                            <td colspan="6" class="text-center py-20 opacity-40 italic">Syncing with Railway database...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            <div class="col-span-12 lg:col-span-9 bg-white rounded-[40px] p-8 custom-shadow flex flex-col">
+                <div class="flex-1 min-h-[480px]">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-amber-900/40 text-sm font-bold uppercase tracking-tighter border-b border-amber-50">
+                                <th class="pb-6 w-12 text-center">ID</th>
+                                <th class="pb-6">Customer</th>
+                                <th class="pb-6">Pet</th>
+                                <th class="pb-6">Service</th>
+                                <th class="pb-6">Status</th>
+                                <th class="pb-6">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="api-table-body" class="text-[#5d4037] font-medium">
+                            </tbody>
+                    </table>
+                </div>
 
-        <div class="mt-12">
-            <h3 class="text-xl font-bold text-amber-900 mb-6">Pricelist & Services</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white rounded-3xl p-6 text-center border-2 border-dashed border-green-100 flex flex-col items-center">
-                    <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 mb-4">
-                        <i class="fas fa-square text-xs"></i>
+                <div class="mt-8 pt-6 border-t border-amber-50 flex items-center justify-between">
+                    <p class="text-sm text-amber-900/40">
+                        Showing <span id="page-range" class="font-bold text-amber-900">0 - 0</span> of <span id="total-data" class="font-bold text-amber-900">0</span>
+                    </p>
+                    <div class="flex gap-2">
+                        <button id="prev-btn" onclick="changePage(-1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        <div id="page-numbers" class="flex gap-2">
+                            </div>
+                        <button id="next-btn" onclick="changePage(1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
                     </div>
-                    <p class="font-bold text-amber-900">Basic Grooming</p>
-                    <p class="text-green-600 font-bold">50k</p>
-                    <p class="text-[10px] opacity-40">Duration: 60m</p>
                 </div>
-                </div>
+            </div>
         </div>
     </main>
 
     <script>
         const API_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
+        
+        let allData = [];
+        let currentPage = 1;
+        const rowsPerPage = 6;
 
         async function fetchData() {
             try {
                 const res = await fetch(API_URL);
-                const data = await res.json();
+                allData = await res.json();
                 
-                const tbody = document.getElementById('api-table-body');
-                tbody.innerHTML = '';
-
-                let activeAppointments = 0;
-                let totalRevenueValue = 0;
-
-                data.forEach((item, index) => {
-                    // Business logic for stats
-                    if(item.status.toLowerCase() === 'pending') activeAppointments++;
-                    totalRevenueValue += parseFloat(item.price);
-
-                    const statusClass = `status-${item.status.toLowerCase()}`;
-                    
-                    const row = `
-                        <tr class="table-row-hover">
-                            <td class="py-5 text-center text-amber-900/30 font-bold">${index + 1}</td>
-                            <td class="py-5 font-bold text-amber-900">${item.customer_name}</td>
-                            <td class="py-5">
-                                <span class="flex items-center gap-2">
-                                    <span class="text-amber-800 opacity-30 italic font-normal">▢</span> ${item.pet_name}
-                                </span>
-                            </td>
-                            <td class="py-5 text-sm">${item.service_name}</td>
-                            <td class="py-5">
-                                <span class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${statusClass}">
-                                    ${item.status}
-                                </span>
-                            </td>
-                            <td class="py-5 text-sm text-amber-900/60 font-mono">
-                                ${formatDate(item.start_date)}
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-
-                // Update UI Stats
-                document.getElementById('stat-active').innerText = activeAppointments;
-                document.getElementById('stat-total').innerText = data.length;
-                document.getElementById('stat-revenue').innerText = formatToM(totalRevenueValue);
-
+                updateStats();
+                renderTable();
             } catch (err) {
                 console.error("API Error:", err);
+                document.getElementById('api-table-body').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-400">Error loading data.</td></tr>`;
             }
         }
 
+        function updateStats() {
+            let active = 0;
+            let revenue = 0;
+            
+            allData.forEach(item => {
+                if(item.status.toLowerCase() === 'pending') active++;
+                revenue += parseFloat(item.price || 0);
+            });
+
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-total').innerText = allData.length;
+            document.getElementById('stat-revenue').innerText = formatToM(revenue);
+            document.getElementById('total-data').innerText = allData.length;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('api-table-body');
+            tbody.innerHTML = '';
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedItems = allData.slice(start, end);
+
+            paginatedItems.forEach((item) => {
+                const statusClass = `status-${item.status.toLowerCase()}`;
+                const row = `
+                    <tr class="table-row-hover border-b border-amber-50/50 last:border-0">
+                        <td class="py-4 text-center text-amber-900/30 font-bold">${item.id}</td>
+                        <td class="py-4 font-bold text-amber-900">${item.customer_name}</td>
+                        <td class="py-4">
+                            <span class="flex items-center gap-2">
+                                <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
+                            </span>
+                        </td>
+                        <td class="py-4 text-sm opacity-80">${item.service_name}</td>
+                        <td class="py-4">
+                            <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="py-4 text-xs text-amber-900/60 font-mono">
+                            ${formatDate(item.start_date)}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            updatePaginationControls(start, end);
+        }
+
+        function updatePaginationControls(start, end) {
+            const totalPages = Math.ceil(allData.length / rowsPerPage);
+            const actualEnd = end > allData.length ? allData.length : end;
+            
+            document.getElementById('page-range').innerText = `${allData.length === 0 ? 0 : start + 1} - ${actualEnd}`;
+            
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
+
+            // Optional: Render page numbers
+            const pageNumbers = document.getElementById('page-numbers');
+            pageNumbers.innerHTML = '';
+            
+            // Show current page indicator
+            pageNumbers.innerHTML = `<span class="w-10 h-10 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-sm border border-amber-100">${currentPage}</span>`;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderTable();
+        }
+
         function formatDate(dateStr) {
+            if(!dateStr) return "-";
             const d = new Date(dateStr);
             return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
 
         function formatToM(value) {
             const millions = value / 1000000;
-            return `Rp ${millions.toFixed(1)}M`;
+            return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
         }
 
         // Run
         fetchData();
-        // Refresh every 1 minute
-        setInterval(fetchData, 60000);
+        // Refresh data every 2 minutes to keep it fresh without disrupting user pagination often
+        setInterval(fetchData, 120000);
     </script>
 </body>
 </html>
