@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PetGroom Pro - Dashboard</title>
+    <title>PetGroom Pro - Live Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -12,38 +12,26 @@
     <style>
         body {
             font-family: 'Quicksand', sans-serif;
-            background-color: #f1efea; /* Soft beige cream */
+            background-color: #f1efea;
             background-image: url("https://www.transparenttextures.com/patterns/paw-print.png");
         }
-        
-        .sidebar { background-color: #d2b48c; } /* Tan Brown */
-        .card-green { background-color: #7d9d85; } /* Sage Green */
-        .table-container { background-color: rgba(210, 180, 140, 0.2); }
-        
-        .hover-lift {
-            transition: all 0.3s ease;
-        }
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .status-badge {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        /* Glassmorphism effect */
+        .sidebar { background-color: #d2b48c; }
+        .card-green { background-color: #7d9d85; }
         .glass {
             background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+        .hover-lift { transition: all 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        /* Shimmer effect for loading */
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     </style>
 </head>
 <body class="flex min-h-screen overflow-x-hidden">
@@ -55,7 +43,6 @@
             </div>
             <h1 class="hidden md:block mt-4 font-bold text-xl tracking-wider uppercase">PetGroom Pro</h1>
         </div>
-
         <nav class="flex-1 w-full px-4 space-y-4">
             <a href="#" class="flex items-center justify-center md:justify-start p-3 rounded-xl bg-white/50 text-amber-900 font-bold transition-all">
                 <i class="fas fa-th-large md:mr-4 text-xl"></i>
@@ -65,153 +52,130 @@
                 <i class="fas fa-paw md:mr-4 text-xl"></i>
                 <span class="hidden md:block">Pets</span>
             </a>
-            <a href="#" class="flex items-center justify-center md:justify-start p-3 rounded-xl hover:bg-white/30 text-amber-800 transition-all">
-                <i class="fas fa-calendar-alt md:mr-4 text-xl"></i>
-                <span class="hidden md:block">Schedules</span>
-            </a>
-            <a href="#" class="flex items-center justify-center md:justify-start p-3 rounded-xl hover:bg-white/30 text-amber-800 transition-all">
-                <i class="fas fa-cog md:mr-4 text-xl"></i>
-                <span class="hidden md:block">Settings</span>
-            </a>
         </nav>
-
-        <div class="mt-auto animate__animated animate__fadeInUp">
-            <button class="bg-red-400/20 text-red-700 p-3 rounded-full hover:bg-red-400 hover:text-white transition-all">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
     </aside>
 
     <main class="flex-1 p-6 md:p-10 relative">
-        <i class="fas fa-leaf absolute top-10 right-10 text-green-200 text-6xl rotate-45 opacity-50"></i>
-        
         <header class="flex justify-between items-center mb-10 animate__animated animate__fadeIn">
             <div>
-                <h2 class="text-3xl font-bold text-amber-900">Welcome Back, Admin! 🐾</h2>
-                <p class="text-green-700">Here's what's happening today.</p>
+                <h2 class="text-3xl font-bold text-amber-900">Live Reservations 🐾</h2>
+                <p class="text-green-700" id="last-updated">Fetching live data...</p>
             </div>
-            <button class="bg-green-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-green-800 transition-all transform hover:scale-105">
-                + New Reservation ✨
+            <button onclick="fetchData()" class="bg-green-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-green-800 transition-all transform hover:rotate-2">
+                <i class="fas fa-sync-alt mr-2"></i> Refresh Data
             </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            <div class="space-y-6">
-                <div class="card-green p-6 rounded-3xl text-white shadow-lg hover-lift animate__animated animate__fadeInLeft">
-                    <p class="text-sm opacity-80 uppercase tracking-widest">Active Appointments</p>
-                    <div class="flex items-end justify-between mt-2">
-                        <h3 class="text-4xl font-bold">18</h3>
-                        <i class="fas fa-chart-line text-2xl opacity-50"></i>
-                    </div>
-                </div>
-                <div class="bg-amber-100 p-6 rounded-3xl text-amber-900 shadow-lg border border-amber-200 hover-lift animate__animated animate__fadeInLeft" style="animation-delay: 0.1s">
-                    <p class="text-sm opacity-80 uppercase tracking-widest text-amber-700">New Pets This Week</p>
-                    <div class="flex items-end justify-between mt-2">
-                        <h3 class="text-4xl font-bold">12</h3>
-                        <i class="fas fa-dog text-2xl opacity-30"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl text-amber-900 shadow-lg hover-lift animate__animated animate__fadeInLeft border-b-4 border-green-600" style="animation-delay: 0.2s">
-                    <p class="text-sm opacity-60 uppercase tracking-widest">Total Revenue</p>
-                    <h3 class="text-3xl font-bold mt-2 text-green-700">Rp 5.4M</h3>
-                </div>
+            <div class="card-green p-6 rounded-3xl text-white shadow-lg hover-lift animate__animated animate__fadeInLeft">
+                <p class="text-sm opacity-80 uppercase tracking-widest">Total Orders</p>
+                <h3 class="text-4xl font-bold mt-2" id="stat-total">-</h3>
             </div>
-
-            <div class="lg:col-span-2 glass rounded-[2rem] p-6 shadow-2xl animate__animated animate__fadeInRight">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-amber-800 border-b border-amber-200">
-                                <th class="pb-4 font-bold">ID</th>
-                                <th class="pb-4 font-bold">Customer</th>
-                                <th class="pb-4 font-bold">Pet</th>
-                                <th class="pb-4 font-bold">Service</th>
-                                <th class="pb-4 font-bold text-center">Status</th>
-                                <th class="pb-4 font-bold">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-amber-900">
-                            <tr class="group hover:bg-white/40 transition-colors">
-                                <td class="py-4">1</td>
-                                <td class="py-4 font-semibold">Kak Siwa</td>
-                                <td class="py-4"><i class="fas fa-cat mr-2 text-amber-600"></i>Prima</td>
-                                <td class="py-4">Basic Grooming</td>
-                                <td class="py-4 text-center">
-                                    <span class="status-badge bg-amber-400 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase">Pending</span>
-                                </td>
-                                <td class="py-4 text-sm opacity-70">17-04 16:00</td>
-                            </tr>
-                            <tr class="group hover:bg-white/40 transition-colors">
-                                <td class="py-4">2</td>
-                                <td class="py-4 font-semibold">Budi Santoso</td>
-                                <td class="py-4"><i class="fas fa-dog mr-2 text-amber-600"></i>Buddy</td>
-                                <td class="py-4">Flea Treatment</td>
-                                <td class="py-4 text-center">
-                                    <span class="bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase">Completed</span>
-                                </td>
-                                <td class="py-4 text-sm opacity-70">05-25 15:00</td>
-                            </tr>
-                            <tr class="group hover:bg-white/40 transition-colors">
-                                <td class="py-4">3</td>
-                                <td class="py-4 font-semibold">Clara</td>
-                                <td class="py-4"><i class="fas fa-paw mr-2 text-amber-600"></i>Mochi</td>
-                                <td class="py-4">Hair Cut</td>
-                                <td class="py-4 text-center">
-                                    <span class="bg-red-400 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase">Cancelled</span>
-                                </td>
-                                <td class="py-4 text-sm opacity-70">05-21 10:00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="bg-white p-6 rounded-3xl text-amber-900 shadow-lg hover-lift animate__animated animate__fadeInLeft border-b-4 border-green-600">
+                <p class="text-sm opacity-60 uppercase tracking-widest">Estimated Revenue</p>
+                <h3 class="text-3xl font-bold mt-2 text-green-700" id="stat-revenue">Rp 0</h3>
+            </div>
+            <div class="bg-amber-100 p-6 rounded-3xl text-amber-900 shadow-lg border border-amber-200 hover-lift animate__animated animate__fadeInLeft">
+                <p class="text-sm opacity-80 uppercase tracking-widest text-amber-700">Small Pets Count</p>
+                <h3 class="text-4xl font-bold mt-2" id="stat-small">-</h3>
             </div>
         </div>
 
-        <h3 class="text-xl font-bold text-amber-900 mb-6 animate__animated animate__fadeInUp">Pricelist & Services</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
-            <div class="bg-white/60 p-4 rounded-3xl border-2 border-dashed border-green-200 text-center hover-lift">
-                <div class="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-soap text-green-700"></i>
-                </div>
-                <h4 class="font-bold text-amber-900 text-sm">Basic Grooming</h4>
-                <p class="text-green-700 font-bold">50k</p>
-                <p class="text-[10px] text-gray-400">Duration: 60m</p>
-            </div>
-            <div class="bg-white/60 p-4 rounded-3xl border-2 border-dashed border-green-200 text-center hover-lift">
-                <div class="bg-amber-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-cut text-amber-700"></i>
-                </div>
-                <h4 class="font-bold text-amber-900 text-sm">Full Haircut</h4>
-                <p class="text-green-700 font-bold">150k</p>
-                <p class="text-[10px] text-gray-400">Duration: 90m</p>
-            </div>
-            <div class="bg-white/60 p-4 rounded-3xl border-2 border-dashed border-green-200 text-center hover-lift">
-                <div class="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-bug text-blue-700"></i>
-                </div>
-                <h4 class="font-bold text-amber-900 text-sm">Flea Care</h4>
-                <p class="text-green-700 font-bold">90k</p>
-                <p class="text-[10px] text-gray-400">Duration: 60m</p>
-            </div>
-            <div class="bg-green-700 p-4 rounded-3xl text-center text-white shadow-xl transform hover:scale-105 transition-all cursor-pointer">
-                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <h4 class="font-bold text-sm">Add New</h4>
-                <p class="text-[10px] opacity-70">Service Type</p>
+        <div class="glass rounded-[2rem] p-6 shadow-2xl animate__animated animate__fadeInUp overflow-hidden">
+            <div class="overflow-x-auto max-h-[500px] custom-scrollbar">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 bg-[#f8f6f2] z-10">
+                        <tr class="text-amber-800 border-b border-amber-200">
+                            <th class="pb-4 font-bold px-2">ID</th>
+                            <th class="pb-4 font-bold px-2">Customer</th>
+                            <th class="pb-4 font-bold px-2">Pet (Size)</th>
+                            <th class="pb-4 font-bold px-2">Service</th>
+                            <th class="pb-4 font-bold px-2 text-right">Price</th>
+                            <th class="pb-4 font-bold px-2 text-center">Status</th>
+                            <th class="pb-4 font-bold px-2">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-amber-900 divide-y divide-amber-100">
+                        <tr>
+                            <td colspan="7" class="py-10 text-center text-amber-600 animate-pulse">Loading data from Railway...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
 
-    <div class="fixed bottom-10 right-10 animate__animated animate__bounce animate__infinite animate__slower hidden md:block">
-        <div class="bg-white p-4 rounded-3xl shadow-2xl flex items-center space-x-3 border-2 border-amber-200">
-            <span class="text-2xl">🐶</span>
-            <div class="text-xs">
-                <p class="font-bold text-amber-900">Woof!</p>
-                <p class="text-gray-500">System is stable.</p>
-            </div>
-        </div>
-    </div>
+    <script>
+        const API_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
 
+        async function fetchData() {
+            const tbody = document.getElementById('table-body');
+            const lastUpdated = document.getElementById('last-updated');
+            
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                // Reset table
+                tbody.innerHTML = '';
+                
+                let totalRevenue = 0;
+                let smallCount = 0;
+
+                data.forEach((item, index) => {
+                    totalRevenue += parseFloat(item.price);
+                    if(item.size === 'Small') smallCount++;
+
+                    const row = `
+                        <tr class="hover:bg-white/60 transition-colors animate__animated animate__fadeIn" style="animation-delay: ${index * 0.05}s">
+                            <td class="py-4 px-2 font-bold text-amber-700">${item.id}</td>
+                            <td class="py-4 px-2 font-semibold">${item.customer_name}</td>
+                            <td class="py-4 px-2">
+                                <div class="flex flex-col">
+                                    <span class="flex items-center"><i class="fas fa-paw mr-2 text-xs text-amber-500"></i>${item.pet_name}</span>
+                                    <span class="text-[10px] bg-amber-100 text-amber-700 px-2 rounded-full w-max mt-1">${item.size}</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-2 text-sm">${item.service_name}</td>
+                            <td class="py-4 px-2 text-right font-bold text-green-700">${formatCurrency(item.price)}</td>
+                            <td class="py-4 px-2 text-center">
+                                <span class="bg-amber-400 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase shadow-amber-200">
+                                    ${item.status}
+                                </span>
+                            </td>
+                            <td class="py-4 px-2 text-[11px] opacity-70">${formatDate(item.start_date)}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+
+                // Update Stats
+                document.getElementById('stat-total').innerText = data.length;
+                document.getElementById('stat-revenue').innerText = formatCurrency(totalRevenue);
+                document.getElementById('stat-small').innerText = smallCount;
+                lastUpdated.innerText = "Last updated: " + new Date().toLocaleTimeString();
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                tbody.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-red-500">Failed to load data. Make sure CORS is enabled on n8n.</td></tr>';
+            }
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const options = { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        }
+
+        // Auto Load
+        window.onload = fetchData;
+    </script>
 </body>
 </html>
