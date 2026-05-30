@@ -43,7 +43,7 @@
 <body class="flex h-screen overflow-hidden">
 
     <div id="toast" class="fixed top-5 right-5 transform translate-y-[-100px] opacity-0 transition-all duration-300 z-50 bg-[#8fa88a] text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
-        <i class="fas fa-check-circle"></i> <span id="toast-text">Status updated successfully!</span>
+        <i id="toast-icon" class="fas fa-check-circle"></i> <span id="toast-text">Status updated successfully!</span>
     </div>
 
     <aside class="w-64 sidebar flex flex-col p-6 flex-shrink-0">
@@ -164,11 +164,33 @@
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
+        
+        // Memantau ID data booking tertinggi di database
+        let latestBookingId = null;
 
         async function fetchData() {
             try {
                 const res = await fetch(API_GET_URL);
                 allData = await res.json();
+                
+                // Mengurutkan ID dari yang terbesar (terbaru di urutan ke-0)
+                allData.sort((a, b) => b.id - a.id);
+
+                if (allData.length > 0) {
+                    const currentHighestId = allData[0].id;
+                    
+                    // JIKA halaman baru dibuka pertama kali, kunci acuan ID awal tanpa pop-up
+                    if (latestBookingId === null) {
+                        latestBookingId = currentHighestId;
+                    } 
+                    // JIKA polling mendeteksi ada ID yang lebih besar dari acuan awal, picu pop-up
+                    else if (currentHighestId > latestBookingId) {
+                        const newBooking = allData[0];
+                        triggerNotification(newBooking);
+                        
+                        latestBookingId = currentHighestId; // Update acuan terbaru
+                    }
+                }
                 
                 updateStats();
                 renderTable();
@@ -176,6 +198,25 @@
                 console.error("API Error:", err);
                 document.getElementById('api-table-body').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-400">Error loading data.</td></tr>`;
             }
+        }
+
+        function triggerNotification(booking) {
+            // Memutar nada pemberitahuan singkat menggunakan modul synthesizer internal browser
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nada Ding (D5)
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch(e) { console.log("Audio feedback blocked"); }
+
+            // Tampilkan pop-up biru mencolok khusus untuk booking baru yang masuk
+            showToast(`🚨 Booking Baru! ${booking.customer_name} (${booking.pet_name})`, false, false, true);
         }
 
         function updateStats() {
@@ -289,15 +330,28 @@
             }
         }
 
-        function showToast(msg, isWaiting = false, isError = false) {
+        function showToast(msg, isWaiting = false, isError = false, isNewAlert = false) {
             const toast = document.getElementById('toast');
             const text = document.getElementById('toast-text');
+            const icon = document.getElementById('toast-icon');
             text.innerText = msg;
             
-            toast.className = `fixed top-5 right-5 z-50 px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2 transition-all duration-300`;
-            if (isError) toast.classList.add('bg-red-500', 'text-white');
-            else if (isWaiting) toast.classList.add('bg-amber-500', 'text-white');
-            else toast.classList.add('bg-[#8fa88a]', 'text-white');
+            toast.className = `fixed top-5 right-5 z-50 px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 transition-all duration-300`;
+            
+            if (isError) {
+                toast.classList.add('bg-red-500', 'text-white');
+                icon.className = "fas fa-exclamation-circle";
+            } else if (isWaiting) {
+                toast.classList.add('bg-amber-500', 'text-white');
+                icon.className = "fas fa-spinner fa-spin";
+            } else if (isNewAlert) {
+                // Desain Pop-up mencolok berwarna biru cerah khusus untuk notifikasi booking baru
+                toast.classList.add('bg-blue-600', 'text-white', 'scale-105', 'border-2', 'border-white');
+                icon.className = "fas fa-bell animate-bounce";
+            } else {
+                toast.classList.add('bg-[#8fa88a]', 'text-white');
+                icon.className = "fas fa-check-circle";
+            }
 
             toast.style.opacity = '1';
             toast.style.transform = 'translateY(0)';
@@ -306,7 +360,7 @@
                 setTimeout(() => {
                     toast.style.opacity = '0';
                     toast.style.transform = 'translateY(-100px)';
-                }, 3000);
+                }, isNewAlert ? 5000 : 3000); // Tampil selama 5 detik jika ada alert baru
             }
         }
 
@@ -338,8 +392,11 @@
             return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
         }
 
+        // Ambil data pertama kali saat web dibuka
         fetchData();
-        setInterval(fetchData, 180000);
+        
+        // Melakukan polling data ke n8n setiap 20 detik sekali secara berkala
+        setInterval(fetchData, 20000); 
     </script>
 </body>
 </html>
