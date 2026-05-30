@@ -15,7 +15,10 @@
         .sidebar { background-color: #d9c5b2; }
         .bg-card-green { background-color: #8fa88a; }
         .bg-card-yellow { background-color: #f9f0c1; }
+        
+        /* Status Badges Colors */
         .status-pending { background-color: #ffcc80; color: #7a5100; }
+        .status-in-progress { background-color: #90caf9; color: #0d47a1; }
         .status-completed { background-color: #a5d6a7; color: #1b5e20; }
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
         
@@ -38,6 +41,10 @@
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
+
+    <div id="toast" class="fixed top-5 right-5 transform translate-y-[-100px] opacity-0 transition-all duration-300 z-50 bg-[#8fa88a] text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
+        <i class="fas fa-check-circle"></i> <span id="toast-text">Status updated successfully!</span>
+    </div>
 
     <aside class="w-64 sidebar flex flex-col p-6">
         <div class="flex flex-col items-center mb-10">
@@ -97,7 +104,7 @@
                 </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-9 bg-white rounded-[40px] p-8 custom-shadow flex flex-col">
+            <div class="col-span-12 lg:col-span-9 bg-white rounded-[40px] p-8 custom-shadow flex flex-col relative">
                 <div class="flex-1 min-h-[480px]">
                     <table class="w-full text-left">
                         <thead>
@@ -106,12 +113,17 @@
                                 <th class="pb-6">Customer</th>
                                 <th class="pb-6">Pet</th>
                                 <th class="pb-6">Service</th>
-                                <th class="pb-6">Status</th>
+                                <th class="pb-6">Status (Click to edit)</th>
                                 <th class="pb-6">Date</th>
                             </tr>
                         </thead>
                         <tbody id="api-table-body" class="text-[#5d4037] font-medium">
-                            </tbody>
+                            <tr>
+                                <td colspan="6" class="text-center py-20 opacity-40 italic">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Loading live database...
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
 
@@ -123,8 +135,7 @@
                         <button id="prev-btn" onclick="changePage(-1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
                             <i class="fas fa-chevron-left text-xs"></i>
                         </button>
-                        <div id="page-numbers" class="flex gap-2">
-                            </div>
+                        <div id="page-numbers" class="flex gap-2"></div>
                         <button id="next-btn" onclick="changePage(1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
                             <i class="fas fa-chevron-right text-xs"></i>
                         </button>
@@ -134,16 +145,25 @@
         </div>
     </main>
 
+    <div id="status-modal" class="hidden absolute bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-50 w-44 flex flex-col gap-1 transition-all">
+        <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
+        <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
+        <button onclick="submitStatusUpdate('Completed')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-completed">Completed</button>
+    </div>
+
     <script>
-        const API_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
+        // Updated API Webhook endpoint for fetching & updating data
+        const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
+        const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e6-befd-292c53e741a6';
         
         let allData = [];
         let currentPage = 1;
         const rowsPerPage = 6;
+        let selectedRowId = null;
 
         async function fetchData() {
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch(API_GET_URL);
                 allData = await res.json();
                 
                 updateStats();
@@ -159,7 +179,8 @@
             let revenue = 0;
             
             allData.forEach(item => {
-                if(item.status.toLowerCase() === 'pending') active++;
+                const statusLower = (item.status || '').toLowerCase();
+                if(statusLower === 'pending' || statusLower === 'in progress') active++;
                 revenue += parseFloat(item.price || 0);
             });
 
@@ -178,7 +199,10 @@
             const paginatedItems = allData.slice(start, end);
 
             paginatedItems.forEach((item) => {
-                const statusClass = `status-${item.status.toLowerCase()}`;
+                // Formatting class string to prevent crash if data is empty/null
+                const formattedStatus = item.status ? item.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
+                const statusClass = `status-${formattedStatus}`;
+                
                 const row = `
                     <tr class="table-row-hover border-b border-amber-50/50 last:border-0">
                         <td class="py-4 text-center text-amber-900/30 font-bold">${item.id}</td>
@@ -188,10 +212,10 @@
                                 <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
                             </span>
                         </td>
-                        <td class="py-4 text-sm opacity-80">${item.service_name}</td>
-                        <td class="py-4">
-                            <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass}">
-                                ${item.status}
+                        <td class="py-4 text-sm opacity-80">${item.service_name || 'N/A'}</td>
+                        <td class="py-4 relative">
+                            <span onclick="openStatusMenu(event, ${item.id})" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass} cursor-pointer hover:brightness-95 transition flex items-center gap-2 w-max shadow-sm">
+                                ${item.status || 'PENDING'} <i class="fas fa-chevron-down text-[7px] opacity-50"></i>
                             </span>
                         </td>
                         <td class="py-4 text-xs text-amber-900/60 font-mono">
@@ -205,20 +229,98 @@
             updatePaginationControls(start, end);
         }
 
+        // Logic for opening dropdown option context menu exactly next to the clicked pill
+        function openStatusMenu(event, id) {
+            event.stopPropagation();
+            selectedRowId = id;
+            
+            const modal = document.getElementById('status-modal');
+            modal.classList.remove('hidden');
+            
+            // Adjust coordinates automatically
+            modal.style.top = `${event.pageY + 10}px`;
+            modal.style.left = `${event.pageX - 80}px`;
+        }
+
+        // Close dropdown when clicking anywhere else
+        document.addEventListener('click', () => {
+            document.getElementById('status-modal').classList.add('hidden');
+        });
+
+        // Dynamic PUT Request logic matching n8n payload pattern
+        async function submitStatusUpdate(newStatus) {
+            if(!selectedRowId) return;
+
+            // Find matching local object to construct validation payload matching image context
+            const originObj = allData.find(d => d.id === selectedRowId);
+            if(!originObj) return;
+
+            // Loader overlay feedback inside button clicked
+            showToast("Updating status...", true);
+
+            const payload = {
+                id: selectedRowId,
+                customer_name: originObj.customer_name,
+                pet_name: originObj.pet_name,
+                service_id: originObj.service_id || 7,
+                start_date: originObj.start_date,
+                end_date: originObj.end_date,
+                status: newStatus,
+                notes: originObj.notes || "",
+                created_at: originObj.created_at
+            };
+
+            try {
+                const response = await fetch(API_URL_PUT, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if(response.ok) {
+                    showToast(`Status updated to ${newStatus}!`);
+                    fetchData(); // Hot reload table to fetch updated state
+                } else {
+                    showToast("Failed to sync change.", false, true);
+                }
+            } catch (error) {
+                console.error("PUT Error:", error);
+                showToast("Network connection failed.", false, true);
+            }
+        }
+
+        function showToast(msg, isWaiting = false, isError = false) {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toast-text');
+            text.innerText = msg;
+            
+            toast.className = `fixed top-5 right-5 z-50 px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2 transition-all duration-300`;
+            if (isError) toast.classList.add('bg-red-500', 'text-white');
+            else if (isWaiting) toast.classList.add('bg-amber-500', 'text-white');
+            else toast.classList.add('bg-[#8fa88a]', 'text-white');
+
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+
+            if(!isWaiting) {
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-100px)';
+                }, 3000);
+            }
+        }
+
         function updatePaginationControls(start, end) {
             const totalPages = Math.ceil(allData.length / rowsPerPage);
             const actualEnd = end > allData.length ? allData.length : end;
             
             document.getElementById('page-range').innerText = `${allData.length === 0 ? 0 : start + 1} - ${actualEnd}`;
-            
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
 
-            // Optional: Render page numbers
             const pageNumbers = document.getElementById('page-numbers');
-            pageNumbers.innerHTML = '';
-            
-            // Show current page indicator
             pageNumbers.innerHTML = `<span class="w-10 h-10 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-sm border border-amber-100">${currentPage}</span>`;
         }
 
@@ -238,10 +340,10 @@
             return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
         }
 
-        // Run
+        // Init
         fetchData();
-        // Refresh data every 2 minutes to keep it fresh without disrupting user pagination often
-        setInterval(fetchData, 120000);
+        // Polling loop reduced to prevent race conditions during updates
+        setInterval(fetchData, 180000);
     </script>
 </body>
 </html>
