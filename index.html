@@ -112,7 +112,7 @@
                                 <th class="pb-6 w-12 text-center">ID</th>
                                 <th class="pb-6">Customer</th>
                                 <th class="pb-6">Pet</th>
-                                <th class="pb-6">Service</th>
+                                <th class="pb-6">Service ID</th>
                                 <th class="pb-6">Status (Click to edit)</th>
                                 <th class="pb-6">Date</th>
                             </tr>
@@ -145,16 +145,15 @@
         </div>
     </main>
 
-    <div id="status-modal" class="hidden absolute bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-50 w-44 flex flex-col gap-1 transition-all">
+    <div id="status-modal" class="hidden fixed bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-50 w-44 flex flex-col gap-1 transition-all">
         <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
         <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
         <button onclick="submitStatusUpdate('Completed')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-completed">Completed</button>
     </div>
 
     <script>
-        // Updated API Webhook endpoint for fetching & updating data
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
-        const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook-test/aea67038-b694-45e3-befd-292c53e741a6';
+        const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e6-befd-292c53e741a6';
         
         let allData = [];
         let currentPage = 1;
@@ -199,7 +198,6 @@
             const paginatedItems = allData.slice(start, end);
 
             paginatedItems.forEach((item) => {
-                // Formatting class string to prevent crash if data is empty/null
                 const formattedStatus = item.status ? item.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
                 const statusClass = `status-${formattedStatus}`;
                 
@@ -212,7 +210,7 @@
                                 <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
                             </span>
                         </td>
-                        <td class="py-4 text-sm opacity-80">${item.service_name || 'N/A'}</td>
+                        <td class="py-4 text-sm opacity-80">ID: ${item.service_id || '7'}</td>
                         <td class="py-4 relative">
                             <span onclick="openStatusMenu(event, ${item.id})" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass} cursor-pointer hover:brightness-95 transition flex items-center gap-2 w-max shadow-sm">
                                 ${item.status || 'PENDING'} <i class="fas fa-chevron-down text-[7px] opacity-50"></i>
@@ -229,7 +227,6 @@
             updatePaginationControls(start, end);
         }
 
-        // Logic for opening dropdown option context menu exactly next to the clicked pill
         function openStatusMenu(event, id) {
             event.stopPropagation();
             selectedRowId = id;
@@ -237,41 +234,41 @@
             const modal = document.getElementById('status-modal');
             modal.classList.remove('hidden');
             
-            // Adjust coordinates automatically
-            modal.style.top = `${event.pageY + 10}px`;
-            modal.style.left = `${event.pageX - 80}px`;
+            // Menggunakan fixed positioning agar letak pop-up menu konsisten di layar
+            modal.style.top = `${event.clientY + 10}px`;
+            modal.style.left = `${event.clientX - 60}px`;
         }
 
-        // Close dropdown when clicking anywhere else
         document.addEventListener('click', () => {
             document.getElementById('status-modal').classList.add('hidden');
         });
 
-        // Dynamic PUT Request logic matching n8n payload pattern
+        // FUNGSI UTAMA: Mengirim data via PUT ke Webhook n8n Anda
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
 
-            // Find matching local object to construct validation payload matching image context
-            const originObj = allData.find(d => d.id === selectedRowId);
+            // Mengambil item data asli dari array berdasarkan ID baris yang diklik
+            const originObj = allData.find(d => parseInt(d.id) === parseInt(selectedRowId));
             if(!originObj) return;
 
-            // Loader overlay feedback inside button clicked
             showToast("Updating status...", true);
 
+            // Membuat Payload terstruktur rapi sesuai dengan database Anda
             const payload = {
-                id: selectedRowId,
+                id: parseInt(originObj.id),
                 customer_name: originObj.customer_name,
                 pet_name: originObj.pet_name,
-                service_id: originObj.service_id || 7,
+                service_id: parseInt(originObj.service_id || 7),
                 start_date: originObj.start_date,
                 end_date: originObj.end_date,
                 status: newStatus,
-                notes: originObj.notes || "",
+                notes: originObj.notes || "None",
                 created_at: originObj.created_at
             };
 
             try {
-                const response = await fetch(API_URL_PUT, {
+                // DIPERBAIKI: Memanggil konstanta URL API_PUT_URL dengan benar
+                const response = await fetch(API_PUT_URL, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -281,13 +278,13 @@
 
                 if(response.ok) {
                     showToast(`Status updated to ${newStatus}!`);
-                    fetchData(); // Hot reload table to fetch updated state
+                    fetchData(); // Muat ulang data terbaru dari database setelah sukses
                 } else {
-                    showToast("Failed to sync change.", false, true);
+                    showToast("Failed to update status on server.", false, true);
                 }
             } catch (error) {
-                console.error("PUT Error:", error);
-                showToast("Network connection failed.", false, true);
+                console.error("PUT Request Error:", error);
+                showToast("Connection failed. Check API URL.", false, true);
             }
         }
 
@@ -340,9 +337,9 @@
             return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
         }
 
-        // Init
+        // Jalankan saat pertama kali dibuka
         fetchData();
-        // Polling loop reduced to prevent race conditions during updates
+        // Polling setiap 3 menit
         setInterval(fetchData, 180000);
     </script>
 </body>
