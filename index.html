@@ -44,8 +44,42 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <div id="toast" class="fixed top-5 right-5 transform translate-y-[-100px] opacity-0 transition-all duration-300 z-50 bg-[#8fa88a] text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
+    <div id="toast" class="fixed top-5 right-5 transform translate-y-[-100px] opacity-0 transition-all duration-300 z-40 bg-[#8fa88a] text-white px-6 py-3 rounded-2xl shadow-lg font-semibold flex items-center gap-2">
         <i id="toast-icon" class="fas fa-check-circle"></i> <span id="toast-text">Status updated successfully!</span>
+    </div>
+
+    <div id="booking-modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 text-center relative overflow-hidden border-4 border-blue-500">
+            <div class="absolute -right-8 -top-8 text-slate-100 text-9xl -rotate-12 pointer-events-none">
+                <i class="fas fa-paw"></i>
+            </div>
+            
+            <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-5 animate-bounce">
+                <i class="fas fa-bell"></i>
+            </div>
+            
+            <h3 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">🚨 BOOKING BARU MASUK!</h3>
+            <p class="text-sm text-slate-500 mb-6">Sistem mendeteksi ada transaksi reservasi baru yang baru saja masuk ke database.</p>
+            
+            <div class="bg-slate-50 rounded-2xl p-4 mb-6 text-left border border-slate-100 space-y-2.5">
+                <div class="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Nama Pelanggan</span>
+                    <span class="font-bold text-slate-800" id="pop-customer">-</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Nama Hewan</span>
+                    <span class="font-bold text-blue-600 flex items-center gap-1.5"><i class="fas fa-dog text-xs"></i> <span id="pop-pet">-</span></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Paket Layanan</span>
+                    <span class="font-medium text-sm text-slate-700 truncate max-w-[200px]" id="pop-service">-</span>
+                </div>
+            </div>
+            
+            <button onclick="closeBookingModal()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 tracking-wide">
+                <i class="fas fa-check"></i> Oke, Saya Cek Sekarang!
+            </button>
+        </div>
     </div>
 
     <aside class="w-64 sidebar flex flex-col p-6 flex-shrink-0">
@@ -168,7 +202,7 @@
         </div>
     </main>
 
-    <div id="status-modal" class="hidden fixed bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-50 w-44 flex flex-col gap-1 transition-all">
+    <div id="status-modal" class="hidden fixed bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-40 w-44 flex flex-col gap-1 transition-all">
         <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
         <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
         <button onclick="submitStatusUpdate('Completed')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-completed">Completed</button>
@@ -177,8 +211,6 @@
     <script>
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
-        
-        // URL API REPORT BARU YANG KAMU BERIKAN
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
         
         let allData = [];
@@ -187,7 +219,6 @@
         let selectedRowId = null;
         let latestBookingId = null;
 
-        // FUNGSI UTAMA: Load data booking tabel utama & deteksi booking baru
         async function fetchData() {
             try {
                 const res = await fetch(API_GET_URL);
@@ -201,9 +232,9 @@
                         latestBookingId = currentHighestId;
                     } else if (currentHighestId > latestBookingId) {
                         const newBooking = allData[0];
-                        triggerNotification(newBooking);
+                        triggerNotification(newBooking); // Memicu pop-up besar tengah layar
                         latestBookingId = currentHighestId;
-                        fetchReportData(); // Ambil ulang report jika ada booking baru masuk
+                        fetchReportData();
                     }
                 }
                 
@@ -215,13 +246,10 @@
             }
         }
 
-        // FUNGSI BARU: Mengambil data report akumulasi SQL (Basic vs Hair Cut) dari API baru Anda
         async function fetchReportData() {
             try {
                 const res = await fetch(API_REPORT_URL);
                 const reportArray = await res.json();
-                
-                // Mengantisipasi jika struktur n8n dibungkus sebagai array [] atau object {}
                 const report = Array.isArray(reportArray) ? reportArray[0] : reportArray;
 
                 if (report) {
@@ -229,11 +257,9 @@
                     const basic = parseInt(report.jumlah_basic || 0);
                     const haircut = parseInt(report.jumlah_include_hair_cut || 0);
 
-                    // Render angka murni ke dalam card statistik baru
                     document.getElementById('stat-report-basic').innerText = `${basic} ekor`;
                     document.getElementById('stat-report-haircut').innerText = `${haircut} ekor`;
 
-                    // Hitung persentase bar secara otomatis untuk visualisasi mini tambahan
                     if (total > 0) {
                         document.getElementById('pct-basic').innerText = `${Math.round((basic / total) * 100)}%`;
                         document.getElementById('pct-haircut').innerText = `${Math.round((haircut / total) * 100)}%`;
@@ -244,7 +270,9 @@
             }
         }
 
+        // FUNGSI MEMBUKA POP-UP BESAR DI DEPAN LAYAR UTAMA
         function triggerNotification(booking) {
+            // Bunyi Ding Cerah bawaan browser
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
@@ -257,19 +285,41 @@
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + 0.15);
             } catch(e) {}
-            showToast(`🚨 Booking Baru! ${booking.customer_name} (${booking.pet_name})`, false, false, true);
+
+            // Masukkan data transaksi baru ke dalam elemen Modal Pop-up
+            document.getElementById('pop-customer').innerText = booking.customer_name;
+            document.getElementById('pop-pet').innerText = booking.pet_name;
+            document.getElementById('pop-service').innerText = booking.service_name || 'N/A';
+
+            // Efek transisi memunculkan Modal secara halus namun tegas di depan layar
+            const overlay = document.getElementById('booking-modal-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('opacity-100');
+                overlay.querySelector('div').classList.remove('scale-90');
+                overlay.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        // FUNGSI MENUTUP POP-UP BESAR
+        function closeBookingModal() {
+            const overlay = document.getElementById('booking-modal-overlay');
+            overlay.classList.remove('opacity-100');
+            overlay.querySelector('div').classList.remove('scale-100');
+            overlay.querySelector('div').classList.add('scale-90');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
         }
 
         function updateStats() {
             let active = 0;
             let revenue = 0;
-            
             allData.forEach(item => {
                 const statusLower = (item.status || '').toLowerCase();
                 if(statusLower === 'pending' || statusLower === 'in progress') active++;
                 revenue += parseFloat(item.price || 0);
             });
-
             document.getElementById('stat-active').innerText = active;
             document.getElementById('stat-total').innerText = allData.length;
             document.getElementById('stat-revenue').innerText = formatToM(revenue);
@@ -279,7 +329,6 @@
         function renderTable() {
             const tbody = document.getElementById('api-table-body');
             tbody.innerHTML = '';
-
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             const paginatedItems = allData.slice(start, end);
@@ -311,7 +360,6 @@
                 `;
                 tbody.innerHTML += row;
             });
-
             updatePaginationControls(start, end);
         }
 
@@ -323,10 +371,6 @@
             modal.style.top = `${event.clientY + 10}px`;
             modal.style.left = `${event.clientX - 60}px`;
         }
-
-        document.addEventListener('click', () => {
-            document.getElementById('status-modal').classList.add('hidden');
-        });
 
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
@@ -357,7 +401,7 @@
                 if(response.ok) {
                     showToast(`Status updated to ${newStatus}!`);
                     fetchData(); 
-                    fetchReportData(); // Jalankan penyegaran report jika status diubah
+                    fetchReportData();
                 } else {
                     showToast("Failed to update status on server.", false, true);
                 }
@@ -366,13 +410,12 @@
             }
         }
 
-        function showToast(msg, isWaiting = false, isError = false, isNewAlert = false) {
+        function showToast(msg, isWaiting = false, isError = false) {
             const toast = document.getElementById('toast');
             const text = document.getElementById('toast-text');
             const icon = document.getElementById('toast-icon');
             text.innerText = msg;
-            
-            toast.className = `fixed top-5 right-5 z-50 px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 transition-all duration-300`;
+            toast.className = `fixed top-5 right-5 z-40 px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 transition-all duration-300`;
             
             if (isError) {
                 toast.classList.add('bg-red-500', 'text-white');
@@ -380,9 +423,6 @@
             } else if (isWaiting) {
                 toast.classList.add('bg-amber-500', 'text-white');
                 icon.className = "fas fa-spinner fa-spin";
-            } else if (isNewAlert) {
-                toast.classList.add('bg-blue-600', 'text-white', 'scale-105', 'border-2', 'border-white');
-                icon.className = "fas fa-bell animate-bounce";
             } else {
                 toast.classList.add('bg-[#8fa88a]', 'text-white');
                 icon.className = "fas fa-check-circle";
@@ -395,7 +435,7 @@
                 setTimeout(() => {
                     toast.style.opacity = '0';
                     toast.style.transform = 'translateY(-100px)';
-                }, isNewAlert ? 5000 : 3000);
+                }, 3000);
             }
         }
 
@@ -419,11 +459,9 @@
         formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
         formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
 
-        // Eksekusi pemanggilan kedua API secara bersamaan di awal
         fetchData();
         fetchReportData();
         
-        // Atur sinkronisasi berkala (polling) setiap 20 detik
         setInterval(() => {
             fetchData();
             fetchReportData();
