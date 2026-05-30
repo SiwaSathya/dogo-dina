@@ -15,6 +15,8 @@
         .sidebar { background-color: #d9c5b2; }
         .bg-card-green { background-color: #8fa88a; }
         .bg-card-yellow { background-color: #f9f0c1; }
+        .bg-card-blue { background-color: #a2c2cf; }
+        .bg-card-orange { background-color: #f2cca1; }
         
         /* Status Badges Colors */
         .status-pending { background-color: #ffcc80; color: #7a5100; }
@@ -70,7 +72,7 @@
     </aside>
 
     <main class="flex-1 p-10 flex flex-col h-screen overflow-hidden">
-        <div class="flex justify-between items-start mb-8 flex-shrink-0">
+        <div class="flex justify-between items-start mb-6 flex-shrink-0">
             <div>
                 <h1 class="text-3xl font-bold text-amber-950">Welcome Back, Admin! 🐾</h1>
                 <p class="text-green-700 font-medium mt-1">Here's what's happening today.</p>
@@ -80,30 +82,46 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-12 gap-8 flex-1 min-h-0 mb-4">
+        <div class="grid grid-cols-12 gap-8 flex-1 min-h-0 mb-2">
             
-            <div class="col-span-12 lg:col-span-3 flex flex-col justify-between h-full gap-4">
-                <div class="bg-card-green p-6 rounded-[32px] text-white relative flex-1 flex flex-col justify-between shadow-sm min-h-[110px]">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-80">Active Appointments</p>
+            <div class="col-span-12 lg:col-span-3 flex flex-col justify-between h-full gap-3">
+                <div class="bg-card-green p-4 rounded-[24px] text-white relative flex-1 flex flex-col justify-between shadow-sm min-h-[85px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-80">Active Appointments</p>
                     <div class="flex justify-between items-end">
-                        <span class="text-4xl font-bold" id="stat-active">-</span>
-                        <i class="fas fa-calendar-check text-2xl opacity-40"></i>
+                        <span class="text-3xl font-bold" id="stat-active">-</span>
+                        <i class="fas fa-calendar-check text-xl opacity-40"></i>
                     </div>
                 </div>
                 
-                <div class="bg-card-yellow p-6 rounded-[32px] text-amber-900 relative flex-1 flex flex-col justify-between shadow-sm min-h-[110px]">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-60">Total Pets</p>
+                <div class="bg-card-yellow p-4 rounded-[24px] text-amber-900 relative flex-1 flex flex-col justify-between shadow-sm min-h-[85px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-60">Total Pets</p>
                     <div class="flex justify-between items-end">
-                        <span class="text-4xl font-bold" id="stat-total">-</span>
-                        <i class="fas fa-dog text-2xl opacity-20"></i>
+                        <span class="text-3xl font-bold" id="stat-total">-</span>
+                        <i class="fas fa-dog text-xl opacity-20"></i>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-[32px] text-amber-950 border-b-4 border-green-500 flex-1 flex flex-col justify-between custom-shadow min-h-[110px]">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-40">Total Revenue</p>
+                <div class="bg-card-blue p-4 rounded-[24px] text-slate-900 relative flex-1 flex flex-col justify-between shadow-sm min-h-[85px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-70">Basic Grooming Only</p>
                     <div class="flex justify-between items-end">
-                        <span class="text-3xl font-bold text-green-700" id="stat-revenue">Rp 0</span>
-                        <i class="fas fa-money-bill-wave text-xl opacity-20 text-green-700"></i>
+                        <span class="text-3xl font-bold text-slate-800" id="stat-report-basic">-</span>
+                        <span class="text-xs font-bold bg-white/40 px-2 py-0.5 rounded-md text-slate-900" id="pct-basic">0%</span>
+                    </div>
+                </div>
+
+                <div class="bg-card-orange p-4 rounded-[24px] text-amber-950 relative flex-1 flex flex-col justify-between shadow-sm min-h-[85px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-70">Include Hair Cut</p>
+                    <div class="flex justify-between items-end">
+                        <span class="text-3xl font-bold text-amber-900" id="stat-report-haircut">-</span>
+                        <span class="text-xs font-bold bg-white/40 px-2 py-0.5 rounded-md text-amber-950" id="pct-haircut">0%</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-[24px] text-amber-950 border-b-4 border-green-500 flex-1 flex flex-col justify-between custom-shadow min-h-[85px]">
+                    <p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Total Revenue</p>
+                    <div class="flex justify-between items-end">
+                        <span class="text-2xl font-bold text-green-700" id="stat-revenue">Rp 0</span>
+                        <i class="fas fa-money-bill-wave text-lg opacity-20 text-green-700"></i>
                     </div>
                 </div>
             </div>
@@ -160,35 +178,32 @@
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
         
+        // URL API REPORT BARU YANG KAMU BERIKAN
+        const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
+        
         let allData = [];
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
-        
-        // Memantau ID data booking tertinggi di database
         let latestBookingId = null;
 
+        // FUNGSI UTAMA: Load data booking tabel utama & deteksi booking baru
         async function fetchData() {
             try {
                 const res = await fetch(API_GET_URL);
                 allData = await res.json();
                 
-                // Mengurutkan ID dari yang terbesar (terbaru di urutan ke-0)
                 allData.sort((a, b) => b.id - a.id);
 
                 if (allData.length > 0) {
                     const currentHighestId = allData[0].id;
-                    
-                    // JIKA halaman baru dibuka pertama kali, kunci acuan ID awal tanpa pop-up
                     if (latestBookingId === null) {
                         latestBookingId = currentHighestId;
-                    } 
-                    // JIKA polling mendeteksi ada ID yang lebih besar dari acuan awal, picu pop-up
-                    else if (currentHighestId > latestBookingId) {
+                    } else if (currentHighestId > latestBookingId) {
                         const newBooking = allData[0];
                         triggerNotification(newBooking);
-                        
-                        latestBookingId = currentHighestId; // Update acuan terbaru
+                        latestBookingId = currentHighestId;
+                        fetchReportData(); // Ambil ulang report jika ada booking baru masuk
                     }
                 }
                 
@@ -200,8 +215,36 @@
             }
         }
 
+        // FUNGSI BARU: Mengambil data report akumulasi SQL (Basic vs Hair Cut) dari API baru Anda
+        async function fetchReportData() {
+            try {
+                const res = await fetch(API_REPORT_URL);
+                const reportArray = await res.json();
+                
+                // Mengantisipasi jika struktur n8n dibungkus sebagai array [] atau object {}
+                const report = Array.isArray(reportArray) ? reportArray[0] : reportArray;
+
+                if (report) {
+                    const total = parseInt(report.total_seluruh_booking || 0);
+                    const basic = parseInt(report.jumlah_basic || 0);
+                    const haircut = parseInt(report.jumlah_include_hair_cut || 0);
+
+                    // Render angka murni ke dalam card statistik baru
+                    document.getElementById('stat-report-basic').innerText = `${basic} ekor`;
+                    document.getElementById('stat-report-haircut').innerText = `${haircut} ekor`;
+
+                    // Hitung persentase bar secara otomatis untuk visualisasi mini tambahan
+                    if (total > 0) {
+                        document.getElementById('pct-basic').innerText = `${Math.round((basic / total) * 100)}%`;
+                        document.getElementById('pct-haircut').innerText = `${Math.round((haircut / total) * 100)}%`;
+                    }
+                }
+            } catch (err) {
+                console.error("Error Fetching Report API:", err);
+            }
+        }
+
         function triggerNotification(booking) {
-            // Memutar nada pemberitahuan singkat menggunakan modul synthesizer internal browser
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
@@ -209,13 +252,11 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nada Ding (D5)
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
                 gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + 0.15);
-            } catch(e) { console.log("Audio feedback blocked"); }
-
-            // Tampilkan pop-up biru mencolok khusus untuk booking baru yang masuk
+            } catch(e) {}
             showToast(`🚨 Booking Baru! ${booking.customer_name} (${booking.pet_name})`, false, false, true);
         }
 
@@ -277,10 +318,8 @@
         function openStatusMenu(event, id) {
             event.stopPropagation();
             selectedRowId = id;
-            
             const modal = document.getElementById('status-modal');
             modal.classList.remove('hidden');
-            
             modal.style.top = `${event.clientY + 10}px`;
             modal.style.left = `${event.clientX - 60}px`;
         }
@@ -291,7 +330,6 @@
 
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
-
             const originObj = allData.find(d => parseInt(d.id) === parseInt(selectedRowId));
             if(!originObj) return;
 
@@ -312,21 +350,19 @@
             try {
                 const response = await fetch(API_PUT_URL, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 if(response.ok) {
                     showToast(`Status updated to ${newStatus}!`);
                     fetchData(); 
+                    fetchReportData(); // Jalankan penyegaran report jika status diubah
                 } else {
                     showToast("Failed to update status on server.", false, true);
                 }
             } catch (error) {
-                console.error("PUT Request Error:", error);
-                showToast("Connection failed. Check API URL.", false, true);
+                showToast("Connection failed.", false, true);
             }
         }
 
@@ -345,7 +381,6 @@
                 toast.classList.add('bg-amber-500', 'text-white');
                 icon.className = "fas fa-spinner fa-spin";
             } else if (isNewAlert) {
-                // Desain Pop-up mencolok berwarna biru cerah khusus untuk notifikasi booking baru
                 toast.classList.add('bg-blue-600', 'text-white', 'scale-105', 'border-2', 'border-white');
                 icon.className = "fas fa-bell animate-bounce";
             } else {
@@ -360,14 +395,13 @@
                 setTimeout(() => {
                     toast.style.opacity = '0';
                     toast.style.transform = 'translateY(-100px)';
-                }, isNewAlert ? 5000 : 3000); // Tampil selama 5 detik jika ada alert baru
+                }, isNewAlert ? 5000 : 3000);
             }
         }
 
         function updatePaginationControls(start, end) {
             const totalPages = Math.ceil(allData.length / rowsPerPage);
             const actualEnd = end > allData.length ? allData.length : end;
-            
             document.getElementById('page-range').innerText = `${allData.length === 0 ? 0 : start + 1} - ${actualEnd}`;
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
@@ -376,27 +410,24 @@
             pageNumbers.innerHTML = `<span class="w-10 h-10 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-sm border border-amber-100">${currentPage}</span>`;
         }
 
-        function changePage(direction) {
-            currentPage += direction;
-            renderTable();
-        }
+        document.body.addEventListener('click', function(e) {
+             const modal = document.getElementById('status-modal');
+             if(!modal.contains(e.target)) modal.classList.add('hidden');
+        }, true);
 
-        function formatDate(dateStr) {
-            if(!dateStr) return "-";
-            const d = new Date(dateStr);
-            return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
+        changePage = (direction) => { currentPage += direction; renderTable(); };
+        formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+        formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
 
-        function formatToM(value) {
-            const millions = value / 1000000;
-            return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
-        }
-
-        // Ambil data pertama kali saat web dibuka
+        // Eksekusi pemanggilan kedua API secara bersamaan di awal
         fetchData();
+        fetchReportData();
         
-        // Melakukan polling data ke n8n setiap 20 detik sekali secara berkala
-        setInterval(fetchData, 20000); 
+        // Atur sinkronisasi berkala (polling) setiap 20 detik
+        setInterval(() => {
+            fetchData();
+            fetchReportData();
+        }, 20000); 
     </script>
 </body>
 </html>
