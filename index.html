@@ -112,7 +112,7 @@
                                 <th class="pb-6 w-12 text-center">ID</th>
                                 <th class="pb-6">Customer</th>
                                 <th class="pb-6">Pet</th>
-                                <th class="pb-6">Service ID</th>
+                                <th class="pb-6">Service</th>
                                 <th class="pb-6">Status (Click to edit)</th>
                                 <th class="pb-6">Date</th>
                             </tr>
@@ -153,7 +153,7 @@
 
     <script>
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
-        const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e6-befd-292c53e741a6';
+        const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook-test/aea67038-b694-45e3-befd-292c53e741a6';
         
         let allData = [];
         let currentPage = 1;
@@ -210,7 +210,7 @@
                                 <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
                             </span>
                         </td>
-                        <td class="py-4 text-sm opacity-80">ID: ${item.service_id || '7'}</td>
+                        <td class="py-4 text-sm opacity-80">ID: ${item.service_name || '7'}</td>
                         <td class="py-4 relative">
                             <span onclick="openStatusMenu(event, ${item.id})" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass} cursor-pointer hover:brightness-95 transition flex items-center gap-2 w-max shadow-sm">
                                 ${item.status || 'PENDING'} <i class="fas fa-chevron-down text-[7px] opacity-50"></i>
