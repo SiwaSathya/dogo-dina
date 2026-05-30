@@ -109,7 +109,7 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="text-amber-900/40 text-sm font-bold uppercase tracking-tighter border-b border-amber-50">
-                                <th class="pb-6 w-12 text-center">ID</th>
+                                <th class="pb-6 w-12 text-center">No</th>
                                 <th class="pb-6">Customer</th>
                                 <th class="pb-6">Pet</th>
                                 <th class="pb-6">Service</th>
@@ -197,20 +197,25 @@
             const end = start + rowsPerPage;
             const paginatedItems = allData.slice(start, end);
 
-            paginatedItems.forEach((item) => {
+            // Menambahkan parameter 'index' pada loop forEach
+            paginatedItems.forEach((item, index) => {
                 const formattedStatus = item.status ? item.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
                 const statusClass = `status-${formattedStatus}`;
                 
+                // Menghitung nomor urut visual (Halaman 1: 1-6, Halaman 2: 7-12, dst)
+                const displayNo = start + index + 1;
+                
+                // Pada parameter openStatusMenu tetap menggunakan item.id asli database
                 const row = `
                     <tr class="table-row-hover border-b border-amber-50/50 last:border-0">
-                        <td class="py-4 text-center text-amber-900/30 font-bold">${item.id}</td>
+                        <td class="py-4 text-center text-amber-900/30 font-bold">${displayNo}</td>
                         <td class="py-4 font-bold text-amber-900">${item.customer_name}</td>
                         <td class="py-4">
                             <span class="flex items-center gap-2">
                                 <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
                             </span>
                         </td>
-                        <td class="py-4 text-sm opacity-80">${item.service_name}</td>
+                        <td class="py-4 text-sm opacity-80">${item.service_name || 'N/A'}</td>
                         <td class="py-4 relative">
                             <span onclick="openStatusMenu(event, ${item.id})" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass} cursor-pointer hover:brightness-95 transition flex items-center gap-2 w-max shadow-sm">
                                 ${item.status || 'PENDING'} <i class="fas fa-chevron-down text-[7px] opacity-50"></i>
@@ -229,12 +234,11 @@
 
         function openStatusMenu(event, id) {
             event.stopPropagation();
-            selectedRowId = id;
+            selectedRowId = id; // Menyimpan ID asli database
             
             const modal = document.getElementById('status-modal');
             modal.classList.remove('hidden');
             
-            // Menggunakan fixed positioning agar letak pop-up menu konsisten di layar
             modal.style.top = `${event.clientY + 10}px`;
             modal.style.left = `${event.clientX - 60}px`;
         }
@@ -243,19 +247,17 @@
             document.getElementById('status-modal').classList.add('hidden');
         });
 
-        // FUNGSI UTAMA: Mengirim data via PUT ke Webhook n8n Anda
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
 
-            // Mengambil item data asli dari array berdasarkan ID baris yang diklik
+            // Mencocokkan data berdasarkan ID database asli yang di-select
             const originObj = allData.find(d => parseInt(d.id) === parseInt(selectedRowId));
             if(!originObj) return;
 
             showToast("Updating status...", true);
 
-            // Membuat Payload terstruktur rapi sesuai dengan database Anda
             const payload = {
-                id: parseInt(originObj.id),
+                id: parseInt(originObj.id), // ID database asli tetap dikirim di payload
                 customer_name: originObj.customer_name,
                 pet_name: originObj.pet_name,
                 service_id: parseInt(originObj.service_id || 7),
@@ -267,7 +269,6 @@
             };
 
             try {
-                // DIPERBAIKI: Memanggil konstanta URL API_PUT_URL dengan benar
                 const response = await fetch(API_PUT_URL, {
                     method: 'PUT',
                     headers: {
@@ -278,7 +279,7 @@
 
                 if(response.ok) {
                     showToast(`Status updated to ${newStatus}!`);
-                    fetchData(); // Muat ulang data terbaru dari database setelah sukses
+                    fetchData(); 
                 } else {
                     showToast("Failed to update status on server.", false, true);
                 }
@@ -337,9 +338,7 @@
             return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`;
         }
 
-        // Jalankan saat pertama kali dibuka
         fetchData();
-        // Polling setiap 3 menit
         setInterval(fetchData, 180000);
     </script>
 </body>
