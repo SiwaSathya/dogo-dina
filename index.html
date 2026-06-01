@@ -25,7 +25,7 @@
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
         
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .table-row-hover:hover { background-color: #fafafa; transition: 0.2s; }
+        .table-row-hover:hover { background-color: #fcfbfa; transition: 0.2s; }
         
         .btn-pagination {
             transition: all 0.2s;
@@ -79,6 +79,70 @@
             <button onclick="closeBookingModal()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 tracking-wide">
                 <i class="fas fa-check"></i> Oke, Saya Cek Sekarang!
             </button>
+        </div>
+    </div>
+
+    <div id="detail-modal-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100">
+            <button onclick="closeDetailModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950">Detail Reservasi</h3>
+                    <p class="text-xs text-amber-800/60 font-mono">ID Booking: #<span id="detail-id">-</span></p>
+                </div>
+            </div>
+
+            <div id="detail-loader" class="py-12 text-center text-amber-900/40 italic">
+                <i class="fas fa-spinner fa-spin mr-2 text-xl"></i>Memuat detail data...
+            </div>
+
+            <div id="detail-content" class="hidden space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Customer</span>
+                        <span class="font-bold text-amber-950 text-sm" id="detail-customer">-</span>
+                    </div>
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Nama Hewan</span>
+                        <span class="font-bold text-amber-950 text-sm flex items-center gap-1.5"><i class="fas fa-dog text-xs opacity-50"></i> <span id="detail-pet">-</span></span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/40">
+                    <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1.5">Layanan Terpilih</span>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-950 text-base" id="detail-service">-</span>
+                        <span class="font-black text-green-700 font-mono text-sm bg-white px-3 py-1 rounded-xl shadow-sm border border-green-100" id="detail-price">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Waktu Mulai</span>
+                        <span class="font-medium text-amber-950 text-xs font-mono" id="detail-start">-</span>
+                    </div>
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Estimasi Selesai</span>
+                        <span class="font-medium text-amber-950 text-xs font-mono" id="detail-end">-</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                    <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Status Pengerjaan</span>
+                    <span id="detail-status" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm">-</span>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Tambahan (Notes)</span>
+                    <p class="text-xs text-slate-600 font-medium italic" id="detail-notes">-</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -212,6 +276,8 @@
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
+        // URL API POST Detail yang baru
+        const API_DETAIL_URL = 'https://n8n-production-bdac.up.railway.app/webhook-test/06b775c2-31bc-4f33-8de2-006f3393d77f';
         
         let allData = [];
         let currentPage = 1;
@@ -232,7 +298,7 @@
                         latestBookingId = currentHighestId;
                     } else if (currentHighestId > latestBookingId) {
                         const newBooking = allData[0];
-                        triggerNotification(newBooking); // Memicu pop-up besar tengah layar
+                        triggerNotification(newBooking);
                         latestBookingId = currentHighestId;
                         fetchReportData();
                     }
@@ -270,14 +336,13 @@
             }
         }
 
-        // FUNGSI MEMBUKA POP-UP BESAR DI DEPAN LAYAR UTAMA
+        // POP-UP RESERVASI BARU
         function triggerNotification(booking) {
-            // Bunyi Ding Cerah bawaan browser
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
+                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
@@ -286,12 +351,10 @@
                 oscillator.stop(audioCtx.currentTime + 0.15);
             } catch(e) {}
 
-            // Masukkan data transaksi baru ke dalam elemen Modal Pop-up
             document.getElementById('pop-customer').innerText = booking.customer_name;
             document.getElementById('pop-pet').innerText = booking.pet_name;
             document.getElementById('pop-service').innerText = booking.service_name || 'N/A';
 
-            // Efek transisi memunculkan Modal secara halus namun tegas di depan layar
             const overlay = document.getElementById('booking-modal-overlay');
             overlay.classList.remove('hidden');
             setTimeout(() => {
@@ -301,9 +364,83 @@
             }, 10);
         }
 
-        // FUNGSI MENUTUP POP-UP BESAR
         function closeBookingModal() {
             const overlay = document.getElementById('booking-modal-overlay');
+            overlay.classList.remove('opacity-100');
+            overlay.querySelector('div').classList.remove('scale-100');
+            overlay.querySelector('div').classList.add('scale-90');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        // FUNGSI MEMBUKA MODAL DETAIL BARU DENGAN POST METHOD
+        async function openDetailModal(id) {
+            const overlay = document.getElementById('detail-modal-overlay');
+            const loader = document.getElementById('detail-loader');
+            const content = document.getElementById('detail-content');
+
+            // Set ID sementara di header detail
+            document.getElementById('detail-id').innerText = id;
+
+            // Tampilkan modal dan loader terlebih dahulu
+            overlay.classList.remove('hidden');
+            loader.classList.remove('hidden');
+            content.classList.add('hidden');
+            
+            setTimeout(() => {
+                overlay.classList.add('opacity-100');
+                overlay.querySelector('div').classList.remove('scale-90');
+                overlay.querySelector('div').classList.add('scale-100');
+            }, 10);
+
+            try {
+                // Mengirim Request POST membawa payload body JSON { id: ... }
+                const response = await fetch(API_DETAIL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: parseInt(id) })
+                });
+
+                if (response.ok) {
+                    const rawData = await response.json();
+                    // Antisipasi jika n8n mengembalikan data dibungkus dalam bentuk array
+                    const data = Array.isArray(rawData) ? rawData[0] : rawData;
+
+                    if (data) {
+                        // Memetakan data dari response API ke elemen modal
+                        document.getElementById('detail-customer').innerText = data.customer_name || '-';
+                        document.getElementById('detail-pet').innerText = data.pet_name || '-';
+                        document.getElementById('detail-service').innerText = data.service_name || 'N/A';
+                        document.getElementById('detail-price').innerText = `Rp ${(data.service_price || data.price || 0).toLocaleString('id-ID')}`;
+                        document.getElementById('detail-start').innerText = formatDate(data.start_date);
+                        document.getElementById('detail-end').innerText = data.end_date ? formatDate(data.end_date) : 'Belum selesai';
+                        document.getElementById('detail-notes').innerText = data.notes || 'Tidak ada catatan khusus.';
+
+                        // Render Badge Status Dinamis di dalam modal detail
+                        const statusEl = document.getElementById('detail-status');
+                        const formattedStatus = data.status ? data.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
+                        statusEl.innerText = data.status || 'PENDING';
+                        statusEl.className = `px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm status-${formattedStatus}`;
+
+                        // Tukar posisi loader ke content
+                        loader.classList.add('hidden');
+                        content.classList.remove('hidden');
+                    } else {
+                        throw new Error("Data kosong");
+                    }
+                } else {
+                    throw new Error("Gagal mengambil data dari server");
+                }
+            } catch (error) {
+                console.error("Detail Error:", error);
+                loader.innerHTML = `<span class="text-red-500 font-semibold"><i class="fas fa-exclamation-circle mr-2"></i>Gagal memuat rincian detail.</span>`;
+            }
+        }
+
+        // FUNGSI MENUTUP MODAL DETAIL
+        function closeDetailModal() {
+            const overlay = document.getElementById('detail-modal-overlay');
             overlay.classList.remove('opacity-100');
             overlay.querySelector('div').classList.remove('scale-100');
             overlay.querySelector('div').classList.add('scale-90');
@@ -338,8 +475,9 @@
                 const statusClass = `status-${formattedStatus}`;
                 const displayNo = start + index + 1;
                 
+                // Menambahkan `onclick="openDetailModal(${item.id})"` pada baris <tr> agar bisa di-klik
                 const row = `
-                    <tr class="table-row-hover border-b border-amber-50/50 last:border-0 h-1/6">
+                    <tr onclick="openDetailModal(${item.id})" class="table-row-hover border-b border-amber-50/50 last:border-0 h-1/6 cursor-pointer">
                         <td class="text-center text-amber-900/30 font-bold">${displayNo}</td>
                         <td class="font-bold text-amber-900 truncate pr-2">${item.customer_name}</td>
                         <td class="truncate pr-2">
@@ -364,6 +502,7 @@
         }
 
         function openStatusMenu(event, id) {
+            // event.stopPropagation mencegah agar fungsi detail (click <tr>) tidak ikut terpicu saat tombol status di-klik
             event.stopPropagation();
             selectedRowId = id;
             const modal = document.getElementById('status-modal');
