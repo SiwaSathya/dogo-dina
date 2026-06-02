@@ -24,6 +24,7 @@
         .status-completed { background-color: #a5d6a7; color: #1b5e20; }
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
         
+        
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .table-row-hover:hover { background-color: #fcfbfa; transition: 0.2s; }
         
@@ -270,6 +271,7 @@
         <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
         <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
         <button onclick="submitStatusUpdate('Completed')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-completed">Completed</button>
+        <button onclick="submitStatusUpdate('Cancelled')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-cancelled">Cancelled</button>
     </div>
 
     <script>
