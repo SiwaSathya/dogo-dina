@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetGroom Pro - Services Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f6f0;
+        }
+        .sidebar { background-color: #d9c5b2; }
+        .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e1d8; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <div id="service-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100">
+            <button onclick="closeServiceModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-concierge-bell" id="modal-icon"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950" id="modal-title">Tambah Layanan Baru</h3>
+                    <p class="text-xs text-amber-800/60 font-mono">ID Layanan: #<span id="form-service-id">Auto</span></p>
+                </div>
+            </div>
+
+            <form id="service-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Nama Layanan</label>
+                    <input type="text" id="form-name" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-semibold text-amber-950">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Ukuran Hewan (Size)</label>
+                        <select id="form-size" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-bold text-amber-950">
+                            <option value="Small">Small</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Large">Large</option>
+                            <option value="XL">XL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Durasi (Menit)</label>
+                        <div class="relative">
+                            <input type="number" id="form-duration" required min="1" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-semibold text-amber-950">
+                            <span class="absolute right-4 top-3.5 text-xs font-bold text-amber-900/40">Min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Harga Layanan (Rp)</label>
+                    <input type="number" id="form-price" required min="0" step="1" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-bold text-green-800">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-4 bg-[#8fa88a] hover:bg-[#769071] text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i> Simpan Data Layanan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <aside class="w-64 sidebar flex flex-col p-6 flex-shrink-0">
+        <div class="flex flex-col items-center mb-10">
+            <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm">
+                <i class="fas fa-paw text-[#8d735b] text-xl"></i>
+            </div>
+            <h2 class="text-amber-900 font-bold tracking-wider text-lg">PETGROOM PRO</h2>
+        </div>
+        <nav class="space-y-2 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </a>
+            <a href="schedule.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-calendar-alt w-5"></i> Schedules
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-white/50 rounded-2xl text-amber-900 font-semibold shadow-sm">
+                <i class="fas fa-concierge-bell w-5"></i> Master Services
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-cog w-5"></i> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-10 flex flex-col h-screen overflow-hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 flex-shrink-0">
+            <div>
+                <h1 class="text-3xl font-bold text-amber-950">Master Services ✨</h1>
+                <p class="text-green-700 font-medium mt-1">Kelola daftar varian perawatan, penyesuaian ukuran hewan, durasi, dan tarif harga.</p>
+            </div>
+            <button onclick="openAddModal()" class="px-5 py-3.5 bg-[#8fa88a] hover:bg-[#769071] text-white font-bold rounded-2xl transition shadow-md flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i> Tambah Layanan
+            </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 flex-shrink-0">
+            <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-4 top-3.5 text-amber-900/30 text-sm"></i>
+                <input type="text" id="search-input" oninput="filterServices()" placeholder="Cari nama paket grooming..." class="w-full pl-11 pr-4 py-3 rounded-2xl border border-amber-100 bg-white text-sm font-semibold text-amber-950 focus:outline-none focus:border-amber-400 shadow-xs">
+            </div>
+            <div class="w-full sm:w-48">
+                <select id="filter-size" onchange="filterServices()" class="w-full px-4 py-3 rounded-2xl border border-amber-100 bg-white text-sm font-bold text-amber-900/70 focus:outline-none focus:border-amber-400 shadow-xs">
+                    <option value="ALL">Semua Ukuran (Size)</option>
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                    <option value="XL">XL</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-white rounded-[40px] custom-shadow flex flex-col min-h-0 overflow-hidden border border-amber-50">
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-amber-100/60 sticky top-0 bg-white z-10">
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider pl-8 w-20">ID</th>
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider">Nama Paket Layanan</th>
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider w-32">Ukuran Hewan</th>
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider w-32">Estimasi Waktu</th>
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider w-40">Tarif Harga</th>
+                            <th class="p-6 text-xs font-bold text-amber-900/40 uppercase tracking-wider text-center w-40 pr-8">Aksi Pengelolaan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="services-table-body" class="divide-y divide-amber-50">
+                        </tbody>
+                </table>
+                <div id="empty-state" class="hidden text-center py-20 text-amber-900/40 italic">
+                    <i class="fas fa-folder-open text-4xl mb-3 block"></i> Layanan tidak ditemukan.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
+        
+        // Data internal lokal agar manipulasi (tambah, edit, hapus) langsung terasa cepat di layar
+        let servicesData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchServices();
+        });
+
+        // 1. AMBIL DATA DARI WEBHOOK
+        async function fetchServices() {
+            const tbody = document.getElementById('services-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-amber-900/50 italic"><i class="fas fa-spinner fa-spin mr-2"></i>Mengunduh data master layanan...</td></tr>`;
+            
+            try {
+                const response = await fetch(API_URL);
+                servicesData = await response.json();
+                renderTable(servicesData);
+            } catch (error) {
+                console.error("Gagal mengambil data layanan:", error);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-500 font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Koneksi API gagal terhubung.</td></tr>`;
+            }
+        }
+
+        // 2. RENDER DATA KE DALAM TABEL HTML
+        function renderTable(data) {
+            const tbody = document.getElementById('services-table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            data.forEach(item => {
+                // Konversi harga string ke format rupiah cantik
+                const formattedPrice = `Rp ${parseFloat(item.price).toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+                
+                // badge warna ukuran hewan
+                let sizeBadgeColor = 'bg-amber-100 text-amber-800';
+                if(item.size === 'Medium') sizeBadgeColor = 'bg-blue-100 text-blue-800';
+                if(item.size === 'Large') sizeBadgeColor = 'bg-purple-100 text-purple-800';
+                if(item.size === 'XL') sizeBadgeColor = 'bg-rose-100 text-rose-800';
+
+                const rowHtml = `
+                    <tr class="hover:bg-amber-50/30 transition group">
+                        <td class="p-6 pl-8 font-mono font-bold text-amber-900/40 text-sm">#${item.id}</td>
+                        <td class="p-6 font-bold text-amber-950 text-sm group-hover:text-amber-900 transition">${item.service_name}</td>
+                        <td class="p-6">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${sizeBadgeColor}">${item.size}</span>
+                        </td>
+                        <td class="p-6 font-semibold text-slate-600 text-sm">
+                            <i class="far fa-clock opacity-60 mr-1"></i> ${item.duration_minutes} Menit
+                        </td>
+                        <td class="p-6 font-black text-green-700 font-mono text-sm">${formattedPrice}</td>
+                        <td class="p-6 pr-8 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openEditModal(${item.id})" class="w-9 w-9 h-9 bg-white hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl transition flex items-center justify-center text-xs shadow-xs" title="Edit Layanan">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteService(${item.id})" class="w-9 h-9 bg-white hover:bg-red-50 text-red-600 border border-red-100 rounded-xl transition flex items-center justify-center text-xs shadow-xs" title="Hapus Layanan">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', rowHtml);
+            });
+        }
+
+        // 3. FITUR CARI & FILTER SIZE KREATOR
+        function filterServices() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const selectedSize = document.getElementById('filter-size').value;
+
+            const filtered = servicesData.filter(item => {
+                const matchesSearch = item.service_name.toLowerCase().includes(query);
+                const matchesSize = (selectedSize === 'ALL') || (item.size === selectedSize);
+                return matchesSearch && matchesSize;
+            });
+
+            renderTable(filtered);
+        }
+
+        // 4. LOGIKA TOMBOL TAMBAH & EDIT MODAL CONTROLLER
+        function openAddModal() {
+            document.getElementById('modal-title').innerText = "Tambah Layanan Baru";
+            document.getElementById('modal-icon').className = "fas fa-plus-circle text-xl";
+            document.getElementById('form-service-id').innerText = "Auto";
+            document.getElementById('service-form').reset();
+            
+            openModalAnimation();
+        }
+
+        function openEditModal(id) {
+            const item = servicesData.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-title').innerText = "Ubah Detail Layanan";
+            document.getElementById('modal-icon').className = "fas fa-edit text-xl";
+            document.getElementById('form-service-id').innerText = item.id;
+            
+            // Masukkan data baris ke dalam form input
+            document.getElementById('form-name').value = item.service_name;
+            document.getElementById('form-size').value = item.size;
+            document.getElementById('form-duration').value = item.duration_minutes;
+            document.getElementById('form-price').value = Math.floor(parseFloat(item.price));
+
+            openModalAnimation();
+        }
+
+        function openModalAnimation() {
+            const modal = document.getElementById('service-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div').classList.remove('scale-90');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeServiceModal() {
+            const modal = document.getElementById('service-modal');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        // 5. PENANGANAN SUBMIT DATA (PROSES LOCAL REFRESH)
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const idLabel = document.getElementById('form-service-id').innerText;
+            
+            const newName = document.getElementById('form-name').value;
+            const newSize = document.getElementById('form-size').value;
+            const newDuration = parseInt(document.getElementById('form-duration').value);
+            const newPrice = parseFloat(document.getElementById('form-price').value).toFixed(3);
+
+            if (idLabel === "Auto") {
+                // Aksi Tambah Baru (Simulasi ID increment otomatis)
+                const nextId = servicesData.length > 0 ? Math.max(...servicesData.map(s => s.id)) + 1 : 1;
+                servicesData.push({
+                    id: nextId,
+                    service_name: newName,
+                    size: newSize,
+                    price: newPrice,
+                    duration_minutes: newDuration
+                });
+            } else {
+                // Aksi Edit Update Data
+                const targetId = parseInt(idLabel);
+                const index = servicesData.findIndex(s => s.id === targetId);
+                if(index !== -1) {
+                    servicesData[index].service_name = newName;
+                    servicesData[index].size = newSize;
+                    servicesData[index].price = newPrice;
+                    servicesData[index].duration_minutes = newDuration;
+                }
+            }
+
+            // Segarkan ulang isi tampilan tabel
+            renderTable(servicesData);
+            closeServiceModal();
+        }
+
+        // 6. LOGIKA HAPUS DATA LAYANAN
+        function deleteService(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus data paket layanan ini?")) {
+                servicesData = servicesData.filter(s => s.id !== id);
+                renderTable(servicesData);
+            }
+        }
+    </script>
+</body>
+</html>
