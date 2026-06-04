@@ -1,1 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetGroom Pro - Schedule & Calendar (v3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f6f0;
+        }
+        .sidebar { background-color: #d9c5b2; }
+        .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        
+        /* Tema Warna Kalender (Earthy & Muted Green) */
+        .fc {
+            --fc-border-color: #e5e1d8;
+            --fc-button-bg-color: #8fa88a;
+            --fc-button-border-color: #8fa88a;
+            --fc-button-hover-bg-color: #769071;
+            --fc-button-hover-border-color: #769071;
+            --fc-button-active-bg-color: #647d5f;
+            --fc-button-active-border-color: #647d5f;
+            --fc-today-bg-color: #f1ede2;
+        }
+        .fc .fc-toolbar-title {
+            color: #452e25;
+            font-weight: 800;
+            font-size: 1.5rem !important;
+        }
+        .fc .fc-col-header-cell-cushion {
+            color: #8d735b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            padding: 10px 0;
+        }
+        .fc .fc-daygrid-day-number {
+            color: #5d4037;
+            font-weight: 600;
+            padding: 8px !important;
+        }
+        .fc .fc-daygrid-day {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .fc .fc-daygrid-day:hover {
+            background-color: #fcfbfa;
+        }
+        
+        /* Badge Event di dalam sel kalender */
+        .fc-event {
+            border: none !important;
+            padding: 3px 6px !important;
+            border-radius: 8px !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            margin-top: 2px !important;
+        }
+        
+        /* Status Badges Colors */
+        .status-pending { background-color: #ffcc80; color: #7a5100; }
+        .status-in-progress { background-color: #90caf9; color: #0d47a1; }
+        .status-completed { background-color: #a5d6a7; color: #1b5e20; }
+        .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <div id="date-list-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-xl w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100 flex flex-col max-h-[85vh]">
+            <button onclick="closeDateListModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6 flex-shrink-0">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-users font-bold"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950">Daftar Booking Pelanggan</h3>
+                    <p class="text-sm text-green-700 font-medium" id="selected-date-title">Tanggal: -</p>
+                </div>
+            </div>
+
+            <div id="booking-list-container" class="overflow-y-auto pr-2 space-y-3 flex-1">
+                </div>
+        </div>
+    </div>
+
+
+    <div id="detail-modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100">
+            <button onclick="closeDetailModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950">Rincian Jadwal Booking</h3>
+                    <p class="text-xs text-amber-800/60 font-mono">ID Booking: #<span id="detail-id">-</span></p>
+                </div>
+            </div>
+
+            <div id="detail-content" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Customer</span>
+                        <span class="font-bold text-amber-950 text-sm" id="detail-customer">-</span>
+                    </div>
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Nama Hewan</span>
+                        <span class="font-bold text-amber-950 text-sm flex items-center gap-1.5"><i class="fas fa-dog text-xs opacity-50"></i> <span id="detail-pet">-</span></span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/40">
+                    <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1.5">Layanan Terpilih</span>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-950 text-base" id="detail-service">-</span>
+                        <span class="font-black text-green-700 font-mono text-sm bg-white px-3 py-1 rounded-xl shadow-sm border border-green-100" id="detail-price">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Waktu Mulai</span>
+                        <span class="font-medium text-amber-950 text-xs font-mono" id="detail-start">-</span>
+                    </div>
+                    <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                        <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Estimasi Selesai</span>
+                        <span class="font-medium text-amber-950 text-xs font-mono" id="detail-end">-</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50/50 p-3.5 rounded-2xl">
+                    <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Status Pengerjaan</span>
+                    <span id="detail-status" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm">-</span>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Tambahan (Notes)</span>
+                    <p class="text-xs text-slate-600 font-medium italic" id="detail-notes">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <aside class="w-64 sidebar flex flex-col p-6 flex-shrink-0">
+        <div class="flex flex-col items-center mb-10">
+            <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm">
+                <i class="fas fa-paw text-[#8d735b] text-xl"></i>
+            </div>
+            <h2 class="text-amber-900 font-bold tracking-wider text-lg">PETGROOM PRO</h2>
+        </div>
+        <nav class="space-y-2 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-dog w-5"></i> Pets
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-white/50 rounded-2xl text-amber-900 font-semibold shadow-sm">
+                <i class="fas fa-calendar-alt w-5"></i> Schedules
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-cog w-5"></i> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-10 flex flex-col h-screen overflow-hidden">
+        <div class="flex justify-between items-start mb-6 flex-shrink-0">
+            <div>
+                <h1 class="text-3xl font-bold text-amber-950">Calendar Schedules 🗓️</h1>
+                <p class="text-green-700 font-medium mt-1">Gunakan data lokal API Utama untuk membuka detail booking secara instan.</p>
+            </div>
+            <div class="flex gap-3">
+                <div class="bg-white px-4 py-2 rounded-xl border border-amber-100 flex items-center gap-4 text-xs font-bold shadow-sm">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Pending</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span> In Progress</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block"></span> Completed</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-white rounded-[40px] p-8 custom-shadow flex flex-col h-full min-h-0 overflow-hidden">
+            <div id="calendar" class="h-full w-full"></div>
+        </div>
+    </main>
+
+    <script>
+        // Hanya menggunakan 1 Webhook Utama yang mengambil seluruh data mentah lengkap
+        const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
+
+        let localBookingsData = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initCalendar();
+        });
+
+        async function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                locale: 'id',
+                dayMaxEvents: true, 
+                editable: false,
+                selectable: true,
+                
+                // Saat kotak tanggal diklik
+                dateClick: function(info) {
+                    openDateListModal(info.dateStr);
+                },
+                
+                // Saat teks label event diklik langsung
+                eventClick: function(info) {
+                    info.jsEvent.stopPropagation();
+                    showBookingDetailInstant(info.event.id);
+                }
+            });
+
+            calendar.render();
+
+            // Ambil data komplit dari server
+            try {
+                const response = await fetch(API_GET_URL);
+                localBookingsData = await response.json();
+                
+                const events = localBookingsData.map(booking => {
+                    let eventBgColor = '#ffcc80'; 
+                    let eventTextColor = '#7a5100';
+                    
+                    const statusLower = (booking.status || '').toLowerCase();
+                    if (statusLower === 'in progress') {
+                        eventBgColor = '#90caf9';
+                        eventTextColor = '#0d47a1';
+                    } else if (statusLower === 'completed') {
+                        eventBgColor = '#a5d6a7';
+                        eventTextColor = '#1b5e20';
+                    } else if (statusLower === 'cancelled') {
+                        eventBgColor = '#ef9a9a';
+                        eventTextColor = '#b71c1c';
+                    }
+
+                    return {
+                        id: booking.id,
+                        title: `🐾 ${booking.pet_name} (${booking.customer_name})`, 
+                        start: booking.start_date,
+                        end: booking.end_date || booking.start_date,
+                        backgroundColor: eventBgColor,
+                        textColor: eventTextColor
+                    };
+                });
+
+                calendar.addEventSource(events);
+
+            } catch (error) {
+                console.error("Gagal memuat jadwal:", error);
+            }
+        }
+
+        // TAMPILKAN DAFTAR ORANG YANG BOOKING PADA TANGGAL TERSEBUT
+        function openDateListModal(dateString) {
+            const overlay = document.getElementById('date-list-overlay');
+            const listContainer = document.getElementById('booking-list-container');
+            
+            const parts = dateString.split('-');
+            document.getElementById('selected-date-title').innerText = `📅 Hari ${parts[2]}-${parts[1]}-${parts[0]}`;
+
+            // Filter data lokal berdasarkan kecocokan string tanggal (YYYY-MM-DD)
+            const filteredBookings = localBookingsData.filter(booking => {
+                if(!booking.start_date) return false;
+                return booking.start_date.substring(0, 10) === dateString;
+            });
+
+            listContainer.innerHTML = '';
+
+            if (filteredBookings.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-12 text-amber-900/40 italic text-sm bg-amber-50/30 rounded-2xl border border-dashed border-amber-200">
+                        <i class="fas fa-calendar-times mb-2 text-2xl block"></i> Tidak ada booking terdaftar untuk tanggal ini.
+                    </div>`;
+            } else {
+                filteredBookings.forEach(booking => {
+                    let badgeClass = 'status-pending';
+                    const status = booking.status || 'PENDING';
+                    const statusLower = status.toLowerCase();
+                    if (statusLower === 'in progress') badgeClass = 'status-in-progress';
+                    if (statusLower === 'completed') badgeClass = 'status-completed';
+                    if (statusLower === 'cancelled') badgeClass = 'status-cancelled';
+
+                    let jamMulai = 'Jam -';
+                    if(booking.start_date) {
+                        const d = new Date(booking.start_date);
+                        jamMulai = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+                    }
+
+                    const cardHtml = `
+                        <div class="bg-amber-50/40 border border-amber-100 p-4 rounded-2xl flex justify-between items-center hover:bg-amber-50 transition shadow-sm">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-amber-950 text-sm">${booking.customer_name}</span>
+                                    <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${badgeClass}">${status}</span>
+                                </div>
+                                <p class="text-xs text-amber-900/60 font-medium">
+                                    🐾 <span class="text-amber-900 font-semibold">${booking.pet_name}</span> &bull; ${booking.service_name || 'Layanan N/A'}
+                                </p>
+                                <p class="text-[11px] text-green-700 font-mono font-bold"><i class="far fa-clock"></i> ${jamMulai}</p>
+                            </div>
+                            <button onclick="showBookingDetailInstant('${booking.id}')" class="px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-950 font-bold text-xs rounded-xl border border-amber-200 transition shadow-xs flex items-center gap-1.5">
+                                Detail <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+                            </button>
+                        </div>
+                    `;
+                    listContainer.insertAdjacentHTML('beforeend', cardHtml);
+                });
+            }
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('opacity-100');
+                overlay.querySelector('div').classList.remove('scale-90');
+                overlay.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDateListModal() {
+            const overlay = document.getElementById('date-list-overlay');
+            overlay.classList.remove('opacity-100');
+            overlay.querySelector('div').classList.remove('scale-100');
+            overlay.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+        }
+
+
+        // REVISI INTI: MEMBUKA DETAIL SECARA INSTANT MENGGUNAKAN DATA LOKAL YANG SUDAH ADA
+        function showBookingDetailInstant(id) {
+            const overlay = document.getElementById('detail-modal-overlay');
+            
+            // Cari objek booking yang ID-nya cocok di dalam array localBookingsData
+            // Menggunakan == untuk mengantisipasi perbedaan tipe data string/number
+            const data = localBookingsData.find(item => item.id == id);
+
+            if (data) {
+                // Pasang seluruh data ke elemen modal secara real-time tanpa delay loading
+                document.getElementById('detail-id').innerText = data.id;
+                document.getElementById('detail-customer').innerText = data.customer_name || '-';
+                document.getElementById('detail-pet').innerText = data.pet_name || '-';
+                document.getElementById('detail-service').innerText = data.service_name || 'N/A';
+                
+                // Format harga ke mata uang Rupiah
+                const hargaLayanan = data.service_price || data.price || 0;
+                document.getElementById('detail-price').innerText = `Rp ${hargaLayanan.toLocaleString('id-ID')}`;
+                
+                document.getElementById('detail-start').innerText = formatDate(data.start_date);
+                document.getElementById('detail-end').innerText = data.end_date ? formatDate(data.end_date) : 'Belum selesai';
+                document.getElementById('detail-notes').innerText = data.notes || 'Tidak ada catatan khusus.';
+
+                // Kelola warna badge status pengerjaan
+                const statusEl = document.getElementById('detail-status');
+                const currentStatus = data.status || 'PENDING';
+                const formattedStatus = currentStatus.replace(/\s+/g, '-').toLowerCase();
+                statusEl.innerText = currentStatus;
+                statusEl.className = `px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm status-${formattedStatus}`;
+
+                // Tampilkan overlay modal rincian detail
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.add('opacity-100');
+                    overlay.querySelector('div').classList.remove('scale-90');
+                    overlay.querySelector('div').classList.add('scale-100');
+                }, 10);
+            } else {
+                alert("Maaf, data rincian booking tidak ditemukan.");
+            }
+        }
+
+        function closeDetailModal() {
+            const overlay = document.getElementById('detail-modal-overlay');
+            overlay.classList.remove('opacity-100');
+            overlay.querySelector('div').classList.remove('scale-100');
+            overlay.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+        }
+
+        // Helper merapikan tampilan format waktu (DD-MM YYYY HH:MM)
+        function formatDate(dateStr) { 
+            if(!dateStr) return "-"; 
+            const d = new Date(dateStr); 
+            return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; 
+        }
+    </script>
+</body>
+</html>
