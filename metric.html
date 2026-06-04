@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetGroom Pro - AI Performance Metrics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f6f0;
+        }
+        .sidebar { background-color: #d9c5b2; }
+        .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e1d8; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <div id="metrics-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-xl w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100 flex flex-col max-h-[85vh]">
+            <button onclick="closeMetricsModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6 flex-shrink-0">
+                <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950">Detail Transkrip Obrolan AI</h3>
+                    <p class="text-xs text-amber-800/60 font-mono" id="modal-timestamp">-</p>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto pr-1 flex-1 custom-scrollbar space-y-4 text-sm">
+                <div class="bg-amber-50/40 border border-amber-100 p-4 rounded-2xl">
+                    <span class="block text-[10px] font-bold text-amber-900/60 uppercase tracking-wider mb-1.5"><i class="fas fa-user mr-1"></i> Pesan Pengguna (User Message)</span>
+                    <p class="text-amber-950 font-semibold leading-relaxed" id="modal-user-msg">-</p>
+                </div>
+
+                <div class="bg-[#8fa88a]/10 border border-[#8fa88a]/30 p-4 rounded-2xl">
+                    <span class="block text-[10px] font-bold text-[#647d5f] uppercase tracking-wider mb-1.5"><i class="fas fa-robot mr-1"></i> Respon Jawaban AI (AI Message)</span>
+                    <p class="text-amber-950 font-medium leading-relaxed" id="modal-ai-msg">-</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase">Waktu Respon</span>
+                        <span class="text-xs font-bold text-slate-700" id="modal-resp-time">-</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase">Status Validitas</span>
+                        <span class="text-xs font-bold text-green-700" id="modal-status">Akurat</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <aside class="w-64 sidebar flex flex-col p-6 flex-shrink-0">
+        <div class="flex flex-col items-center mb-10">
+            <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm">
+                <i class="fas fa-paw text-[#8d735b] text-xl"></i>
+            </div>
+            <h2 class="text-amber-900 font-bold tracking-wider text-lg">PETGROOM PRO</h2>
+        </div>
+        <nav class="space-y-2 flex-1">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </a>
+            <a href="schedule.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-calendar-alt w-5"></i> Schedules
+            </a>
+            <a href="services.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-concierge-bell w-5"></i> Master Services
+            </a>
+            <a href="knowledge.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-brain w-5"></i> AI Knowledge Base
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 bg-white/50 rounded-2xl text-amber-900 font-semibold shadow-sm">
+                <i class="fas fa-chart-line w-5"></i> Performance Metrics
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 px-4 py-3 text-amber-900/70 hover:bg-white/30 rounded-2xl transition">
+                <i class="fas fa-cog w-5"></i> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-10 flex flex-col h-screen overflow-hidden">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 flex-shrink-0">
+            <div>
+                <h1 class="text-3xl font-bold text-amber-950">AI Performance Metrics 📈</h1>
+                <p class="text-green-700 font-medium mt-1">Pantau statistik lalu lintas chat, kecepatan waktu respon, dan transkrip percakapan AI.</p>
+            </div>
+            <button onclick="refreshMetricsData()" class="px-5 py-3 bg-white hover:bg-amber-50 text-amber-950 font-bold rounded-2xl border border-amber-200 transition shadow-sm flex items-center gap-2 text-sm">
+                <i class="fas fa-sync-alt"></i> Refresh Data
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6 flex flex-col min-h-0">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 flex-shrink-0">
+                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
+                    <div class="w-11 h-11 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-stopwatch"></i></div>
+                    <div>
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Response Time</span>
+                        <span class="block text-lg font-extrabold text-amber-950">1.24 Detik</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
+                    <div class="w-11 h-11 bg-emerald-50 text-emerald-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-bullseye"></i></div>
+                    <div>
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Akurasi Jawaban</span>
+                        <span class="block text-lg font-extrabold text-amber-950">98.4 %</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
+                    <div class="w-11 h-11 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-comments"></i></div>
+                    <div>
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sesi Obrolan</span>
+                        <span class="block text-lg font-extrabold text-amber-950">1,420 Chat</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
+                    <div class="w-11 h-11 bg-rose-50 text-rose-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-exclamation-circle"></i></div>
+                    <div>
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Hallucination Rate</span>
+                        <span class="block text-lg font-extrabold text-amber-950">0.12 %</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 border border-amber-50 custom-shadow flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-amber-950"><i class="fas fa-chart-area text-green-700 mr-1.5"></i> Grafik Tren Trafik Pesan Seminggu Terakhir</h3>
+                    <span class="text-xs font-mono text-slate-400">Data Periode Aktual</span>
+                </div>
+                <div class="h-64 w-full">
+                    <canvas id="metricsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[32px] custom-shadow border border-amber-50 flex flex-col flex-1 min-h-[300px]">
+                <div class="p-6 border-b border-amber-50 flex justify-between items-center flex-shrink-0">
+                    <h3 class="text-base font-bold text-amber-950"><i class="fas fa-list text-[#8d735b] mr-1.5"></i> Log Transkrip Obrolan Real-Time AI</h3>
+                    <div class="relative w-64">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-amber-900/30 text-xs"></i>
+                        <input type="text" id="search-metrics" oninput="filterMetrics()" placeholder="Cari pesan atau log obrolan..." class="w-full pl-9 pr-3 py-1.5 rounded-xl border border-amber-100 bg-amber-50/10 text-xs font-semibold focus:outline-none focus:border-amber-400">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-amber-100/60 sticky top-0 bg-white z-10">
+                                <th class="p-4 pl-6 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider w-44">Time (Waktu)</th>
+                                <th class="p-4 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider">User Message (Pesan Masuk)</th>
+                                <th class="p-4 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider">AI Message (Respon Keluar)</th>
+                                <th class="p-4 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider w-28">Speed</th>
+                                <th class="p-4 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider w-28 text-center">Feedback</th>
+                                <th class="p-4 text-[11px] font-bold text-amber-900/40 uppercase tracking-wider text-center w-24 pr-6">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-table-body" class="divide-y divide-amber-50/50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // 1. DATA MOCK LOG METRICS (3 TIMES / TIMESTAMP, USER MESSAGE, AI MESSAGE, DLL)
+        let metricsData = [
+            {
+                id: 101,
+                time: "2026-06-04 18:32:10",
+                user_message: "Halo, apakah besok jam 10 pagi ada slot kosong untuk mandiin anjing Corgi?",
+                ai_message: "Halo! Berdasarkan jadwal master kami, besok jam 10:00 WIB ada 1 slot kosong untuk ukuran Medium (Corgi). Mau dibooking sekarang?",
+                duration: "1.05s",
+                feedback: "helpful"
+            },
+            {
+                id: 102,
+                time: "2026-06-04 17:15:44",
+                user_message: "Kucing saya agak galak kalau kena air, apa ada biaya tambahan buat handlingnya?",
+                ai_message: "Tidak ada biaya tambahan untuk hewan agresif kak. Groomer kami sudah bersertifikat dan dibekali SOP perlindungan (collar cone & handuk penenang) tanpa dipungut tarif ekstra.",
+                duration: "1.42s",
+                feedback: "helpful"
+            },
+            {
+                id: 103,
+                time: "2026-06-04 14:02:11",
+                user_message: "Berapa lama proses pengerjaan paket Basic Grooming + Potong Rambut buat ras XL?",
+                ai_message: "Untuk anjing ukuran XL dengan paket lengkap potong rambut, estimasi durasi pengerjaan berkisar antara 150 menit (2.5 jam) agar hasilnya rapi dan maksimal.",
+                duration: "0.98s",
+                feedback: "helpful"
+            },
+            {
+                id: 104,
+                time: "2026-06-03 11:20:05",
+                user_message: "Bisa bayar pakai apa aja di salon maxGrooming?",
+                ai_message: "Kami menerima pembayaran tunai (cash), transfer bank BCA/Mandiri, serta Scan QRIS (Gopay, OVO, Dana, ShopeePay).",
+                duration: "1.10s",
+                feedback: "helpful"
+            },
+            {
+                id: 105,
+                time: "2026-06-03 09:45:30",
+                user_message: "Halo p",
+                ai_message: "Halo! Ada yang bisa AI maxGrooming bantu hari ini mengenai info layanan atau jadwal booking?",
+                duration: "0.65s",
+                feedback: "neutral"
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMetricsTable(metricsData);
+            initMetricsChart();
+        });
+
+        // 2. RENDER TABEL HISTORIS LOG CHAT
+        function renderMetricsTable(data) {
+            const tbody = document.getElementById('metrics-table-body');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                let badgeFeedback = `<span class="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-md font-bold"><i class="far fa-thumbs-up"></i> Puas</span>`;
+                if(item.feedback === 'neutral') {
+                    badgeFeedback = `<span class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-md font-bold"><i class="far fa-comment"></i> Netral</span>`;
+                }
+
+                const rowHtml = `
+                    <tr class="hover:bg-amber-50/20 transition text-xs text-amber-950 font-medium">
+                        <td class="p-4 pl-6 font-mono text-slate-500 text-[11px]">${item.time}</td>
+                        <td class="p-4 max-w-xs truncate font-semibold">${item.user_message}</td>
+                        <td class="p-4 max-w-sm truncate text-slate-600">${item.ai_message}</td>
+                        <td class="p-4 font-mono text-green-700 font-bold"><i class="far fa-clock opacity-60"></i> ${item.duration}</td>
+                        <td class="p-4 text-center">${badgeFeedback}</td>
+                        <td class="p-4 pr-6 text-center">
+                            <button onclick="openMetricsDetail(${item.id})" class="px-2.5 py-1 bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 rounded-lg font-bold text-[11px] transition shadow-2xs">
+                                Detail
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', rowHtml);
+            });
+        }
+
+        // 3. INISIALISASI GRAFIK TREN PERFORMA (CHART.JS)
+        function initMetricsChart() {
+            const ctx = document.getElementById('metricsChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['29 Mei', '30 Mei', '31 Mei', '01 Jun', '02 Jun', '03 Jun', '04 Jun'],
+                    datasets: [
+                        {
+                            label: 'User Messages (Pesan Masuk)',
+                            data: [120, 145, 190, 110, 135, 210, 245],
+                            borderColor: '#8fa88a',
+                            backgroundColor: 'rgba(143, 168, 138, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'AI Response Speed (x0.1 Detik)',
+                            data: [14, 13, 11, 15, 12, 10, 12], // dikali 10 untuk skala visual grafik
+                            borderColor: '#d9c5b2',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: { family: 'Plus Jakarta Sans', weight: 'bold', size: 11 },
+                                color: '#452e25'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#f1ede2' },
+                            ticks: { font: { family: 'Plus Jakarta Sans' }, color: '#8d735b' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Plus Jakarta Sans', weight: 'bold' }, color: '#8d735b' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. SEARCHING FILTER LOG TEXT
+        function filterMetrics() {
+            const query = document.getElementById('search-metrics').value.toLowerCase();
+            const filtered = metricsData.filter(item => {
+                return item.user_message.toLowerCase().includes(query) || item.ai_message.toLowerCase().includes(query);
+            });
+            renderMetricsTable(filtered);
+        }
+
+        // 5. MODAL INTERACTIVE DETAIL OBROLAN CONTROLLER
+        function openMetricsDetail(id) {
+            const item = metricsData.find(m => m.id === id);
+            if(!item) return;
+
+            document.getElementById('modal-timestamp').innerText = `🕒 Terjadi pada: ${item.time}`;
+            document.getElementById('modal-user-msg').innerText = item.user_message;
+            document.getElementById('modal-ai-msg').innerText = item.ai_message;
+            document.getElementById('modal-resp-time').innerText = `${item.duration} (Sangat Cepat)`;
+
+            const modal = document.getElementById('metrics-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div').classList.remove('scale-90');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeMetricsModal() {
+            const modal = document.getElementById('metrics-modal');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function refreshMetricsData() {
+            alert("🔄 Seluruh metrik performa AI dan log percakapan diperbarui ke kondisi paling real-time.");
+            renderMetricsTable(metricsData);
+        }
+    </script>
+</body>
+</html>
