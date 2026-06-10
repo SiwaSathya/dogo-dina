@@ -77,7 +77,7 @@
                     <button onclick="disableEditMode(false)" class="px-5 py-3.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-2xl transition flex items-center gap-2">
                         Batal
                     </button>
-                    <button onclick="saveBusinessSettings()" class="px-5 py-3.5 bg-[#647d5f] hover:bg-[#53694f] text-white font-bold rounded-2xl transition shadow-md flex items-center gap-2">
+                    <button id="btn-save" onclick="saveBusinessSettings()" class="px-5 py-3.5 bg-[#647d5f] hover:bg-[#53694f] text-white font-bold rounded-2xl transition shadow-md flex items-center gap-2">
                         <i class="fas fa-save"></i> Simpan Perubahan
                     </button>
                 </div>
@@ -87,6 +87,8 @@
         <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
             
             <form id="settings-form" onsubmit="event.preventDefault();">
+                <input type="hidden" id="input-id" value="1">
+                
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     <div class="lg:col-span-1 bg-white rounded-[32px] p-8 custom-shadow border border-amber-50 flex flex-col items-center text-center">
@@ -105,7 +107,7 @@
                             <div>
                                 <label class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Status Toko</label>
                                 <select id="input-status" disabled class="w-full px-4 py-2.5 rounded-xl border border-amber-100 bg-white text-xs font-bold text-amber-950 focus:outline-none focus:border-amber-400 form-input-custom">
-                                    <option value="Buka">🟢 Buka & Menerima Booking</option>
+                                    <option value="Buka & Menerima Booking">🟢 Buka & Menerima Booking</option>
                                     <option value="Tutup Sementara">🔴 Tutup Sementara (Renovasi/Libur)</option>
                                 </select>
                             </div>
@@ -214,67 +216,71 @@
     </main>
 
     <script>
-        // 1. DATA DEFAULT BISNIS MAXGROOMING (Dipakai jika Local Storage masih kosong)
-        const defaultSettings = {
-            name: "maxGrooming",
-            tagline: "Premium Care for Your Beloved Furry Friends",
-            desc: "maxGrooming menyediakan jasa perawatan hewan (anjing & kucing) profesional dengan standar kebersihan tinggi. Menggunakan produk berkualitas premium dan ditangani oleh groomer berpengalaman.",
-            status: "Buka",
-            phone: "+62 812-3456-7890",
-            email: "halo@maxgrooming.com",
-            address: "Jl. Melati Raya No. 12, Jakarta Selatan",
-            openTime: "09:00",
-            closeTime: "18:00",
-            days: "Senin - Minggu (Setiap Hari)",
-            instagram: "@maxgrooming.id",
-            tiktok: "@maxgrooming.official"
+        // ENDPOINT CONFIGURATION
+        const GET_URL = "https://n8n-production-bdac.up.railway.app/webhook/5d90783c-4a24-414e-bd69-7b73318458b3";
+        const PUT_URL = "https://n8n-production-bdac.up.railway.app/webhook/d32543bb-6386-4b27-b127-93f6919a9186";
+
+        // Variabel penampung internal data untuk melacak timestamp asli agar tidak hilang saat PUT
+        let currentMetadata = {
+            created_at: "",
+            updated_at: ""
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadBusinessSettings();
+            fetchBusinessSettings();
         });
 
-        // 2. AMBIL DATA DARI LOCAL STORAGE & MAP KE INPUT FIELD
-        function loadBusinessSettings() {
-            // Cek apakah admin sudah pernah menyimpan data sebelumnya di browser ini
-            const savedData = localStorage.getItem('maxGrooming_settings');
-            const data = savedData ? JSON.parse(savedData) : defaultSettings;
+        // 1. AMBIL DATA REAL-TIME DARI WEBHOOK GET n8n
+        async function fetchBusinessSettings() {
+            try {
+                const response = await fetch(GET_URL);
+                if (!response.ok) throw new Error('Gagal mengambil data dari server webhook.');
+                
+                const data = await response.json();
 
-            // Masukkan data objek ke dalam value form input masing-masing
-            document.getElementById('input-name').value = data.name;
-            document.getElementById('input-tagline').value = data.tagline;
-            document.getElementById('input-desc').value = data.desc;
-            document.getElementById('input-status').value = data.status;
-            document.getElementById('input-phone').value = data.phone;
-            document.getElementById('input-email').value = data.email;
-            document.getElementById('input-address').value = data.address;
-            document.getElementById('input-open-time').value = data.openTime;
-            document.getElementById('input-close-time').value = data.closeTime;
-            document.getElementById('input-days').value = data.days;
-            document.getElementById('input-instagram').value = data.instagram;
-            document.getElementById('input-tiktok').value = data.tiktok;
+                // Mapping objek JSON database ke elemen form UI
+                document.getElementById('input-id').value = data.id || 1;
+                document.getElementById('input-name').value = data.company_name || "";
+                document.getElementById('input-tagline').value = data.tagline || "";
+                document.getElementById('input-desc').value = data.description || "";
+                document.getElementById('input-status').value = data.store_status || "Buka & Menerima Booking";
+                document.getElementById('input-phone').value = data.whatsapp_number || "";
+                document.getElementById('input-email').value = data.business_email || "";
+                document.getElementById('input-address').value = data.full_address || "";
+                document.getElementById('input-open-time').value = data.open_time || "09:00:00";
+                document.getElementById('input-close-time').value = data.close_time || "18:00:00";
+                document.getElementById('input-days').value = data.working_days || "";
+                document.getElementById('input-instagram').value = data.instagram_handle || "";
+                document.getElementById('input-tiktok').value = data.tiktok_handle || "";
 
-            // Perbarui nama teks di panel kiri avatar
-            document.getElementById('display-biz-name').innerText = data.name;
+                // Update text profil statis panel kiri
+                document.getElementById('display-biz-name').innerText = data.company_name || "maxGrooming";
+
+                // Amankan data waktu pembuatan
+                currentMetadata.created_at = data.created_at;
+                currentMetadata.updated_at = data.updated_at;
+
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert("❌ Gagal memuat konfigurasi dari n8n. Menampilkan data cadangan.");
+            }
         }
 
-        // 3. AKTIFKAN MODE EDIT (Membuka gembok disable field input)
+        // 2. AKTIFKAN MODE EDIT (Membuka gembok disable field input)
         function enableEditMode() {
             document.getElementById('btn-edit').classList.add('hidden');
             document.getElementById('edit-actions').classList.remove('hidden');
             document.getElementById('avatar-overlay').classList.remove('hidden');
 
-            // Ambil semua elemen input di dalam form dan hapus atribut 'disabled'
             const inputs = document.querySelectorAll('.form-input-custom');
             inputs.forEach(input => {
                 input.removeAttribute('disabled');
             });
             
-            // Berikan fokus border ke input nama pertama agar interaktif
             document.getElementById('input-name').focus();
         }
 
-        // 4. MATIKAN MODE EDIT (Mengunci kembali field form input)
+        // 3. MATIKAN MODE EDIT
         function disableEditMode(isSaveAction = false) {
             document.getElementById('btn-edit').classList.remove('hidden');
             document.getElementById('edit-actions').classList.add('hidden');
@@ -285,38 +291,64 @@
                 input.setAttribute('disabled', 'true');
             });
 
-            // Jika batal mengedit (bukan aksi simpan), muat ulang data asli dari storage
+            // Jika batal mengedit, panggil ulang data murni terakhir dari server
             if (!isSaveAction) {
-                loadBusinessSettings();
+                fetchBusinessSettings();
             }
         }
 
-        // 5. SIMPAN PERUBAHAN INFORMASI BARU KE LOCAL STORAGE
-        function saveBusinessSettings() {
-            const updatedData = {
-                name: document.getElementById('input-name').value,
+        // 4. KIRIM DATA PERUBAHAN VIA METHOD PUT KE WEBHOOK n8n
+        async function saveBusinessSettings() {
+            const saveButton = document.getElementById('btn-save');
+            
+            // Ubah state tombol menjadi loading
+            saveButton.disabled = true;
+            saveButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyimpan...`;
+
+            // Susun body payload sesuai skema kolom database dina.company_profile
+            const payload = {
+                id: parseInt(document.getElementById('input-id').value),
+                company_name: document.getElementById('input-name').value,
                 tagline: document.getElementById('input-tagline').value,
-                desc: document.getElementById('input-desc').value,
-                status: document.getElementById('input-status').value,
-                phone: document.getElementById('input-phone').value,
-                email: document.getElementById('input-email').value,
-                address: document.getElementById('input-address').value,
-                openTime: document.getElementById('input-open-time').value,
-                closeTime: document.getElementById('input-close-time').value,
-                days: document.getElementById('input-days').value,
-                instagram: document.getElementById('input-instagram').value,
-                tiktok: document.getElementById('input-tiktok').value
+                description: document.getElementById('input-desc').value,
+                store_status: document.getElementById('input-status').value,
+                whatsapp_number: document.getElementById('input-phone').value,
+                business_email: document.getElementById('input-email').value,
+                full_address: document.getElementById('input-address').value,
+                open_time: document.getElementById('input-open-time').value,
+                close_time: document.getElementById('input-close-time').value,
+                working_days: document.getElementById('input-days').value,
+                instagram_handle: document.getElementById('input-instagram').value,
+                tiktok_handle: document.getElementById('input-tiktok').value,
+                created_at: currentMetadata.created_at,
+                updated_at: new Date().toISOString() // perbarui penanda waktu perubahan terbaru
             };
 
-            // Simpan objek JSON ke string di local storage browser
-            localStorage.setItem('maxGrooming_settings', JSON.stringify(updatedData));
-            
-            // Perbarui nama display toko secara berkala
-            document.getElementById('display-biz-name').innerText = updatedData.name;
+            try {
+                const response = await fetch(PUT_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            // Berikan notifikasi feedback sukses, kunci kembali formnya
-            alert("✨ Sukses! Informasi bisnis maxGrooming berhasil diperbarui.");
-            disableEditMode(true);
+                if (!response.ok) throw new Error('Gagal mengirim pembaruan data ke server.');
+
+                // Render instan ke teks nama display statis
+                document.getElementById('display-biz-name').innerText = payload.company_name;
+
+                alert("✨ Sukses! Informasi bisnis maxGrooming berhasil diperbarui langsung ke database.");
+                disableEditMode(true);
+
+            } catch (error) {
+                console.error("PUT Error:", error);
+                alert("❌ Terjadi kesalahan jaringan. Gagal memperbarui profil bisnis.");
+            } finally {
+                // Kembalikan kondisi normal tombol simpan
+                saveButton.disabled = false;
+                saveButton.innerHTML = `<i class="fas fa-save"></i> Simpan Perubahan`;
+            }
         }
     </script>
 </body>
