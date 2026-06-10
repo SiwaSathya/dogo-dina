@@ -6,7 +6,10 @@
     <title>PetGroom Pro - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -24,7 +27,6 @@
         .status-completed { background-color: #a5d6a7; color: #1b5e20; }
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
         
-        
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .table-row-hover:hover { background-color: #fcfbfa; transition: 0.2s; }
         
@@ -41,6 +43,10 @@
             color: white;
             border-color: #8fa88a;
         }
+        .swal2-popup {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            border-radius: 24px !important;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -49,19 +55,85 @@
         <i id="toast-icon" class="fas fa-check-circle"></i> <span id="toast-text">Status updated successfully!</span>
     </div>
 
+    <div id="create-booking-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="closeCreateModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-green-100 text-green-800 rounded-2xl flex items-center justify-center text-xl">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-amber-950">Buat Reservasi Baru</h3>
+                    <p class="text-xs text-green-700 font-medium">Tambah data antrean booking perawatan salon</p>
+                </div>
+            </div>
+
+            <form id="booking-form" onsubmit="handleCreateBookingSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Nama Customer</label>
+                        <input type="text" id="form-customer-name" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-semibold text-amber-950">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Nama Hewan (Pet)</label>
+                        <input type="text" id="form-pet-name" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-semibold text-amber-950">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Ukuran (Size)</label>
+                        <select id="form-booking-size" required onchange="populateServiceDropdown()" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-bold text-amber-950">
+                            <option value="" disabled selected>Pilih Size</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Paket Layanan</label>
+                        <select id="form-booking-service" required onchange="updateCalculatedPrice()" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-xs font-bold text-amber-950">
+                            <option value="" disabled selected>Pilih Layanan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Waktu Mulai</label>
+                        <input type="datetime-local" id="form-start-date" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-xs font-semibold text-amber-950">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Tarif Harga (Otomatis)</label>
+                        <input type="text" id="form-booking-price-display" readonly placeholder="Rp 0" class="w-full px-4 py-3 rounded-xl border border-amber-100 bg-slate-50 text-sm font-black text-green-700 outline-none">
+                        <input type="hidden" id="form-booking-price">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Catatan Tambahan (Notes)</label>
+                    <textarea id="form-notes" rows="2" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-medium text-amber-950" placeholder="Contoh: Hewan galak, kutu banyak, dll..."></textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="btn-submit-booking" class="w-full py-4 bg-[#8fa88a] hover:bg-[#769071] text-white font-bold rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Daftarkan Booking Baru
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="booking-modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
         <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 text-center relative overflow-hidden border-4 border-blue-500">
             <div class="absolute -right-8 -top-8 text-slate-100 text-9xl -rotate-12 pointer-events-none">
                 <i class="fas fa-paw"></i>
             </div>
-            
             <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-5 animate-bounce">
                 <i class="fas fa-bell"></i>
             </div>
-            
             <h3 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">🚨 BOOKING BARU MASUK!</h3>
             <p class="text-sm text-slate-500 mb-6">Sistem mendeteksi ada transaksi reservasi baru yang baru saja masuk ke database.</p>
-            
             <div class="bg-slate-50 rounded-2xl p-4 mb-6 text-left border border-slate-100 space-y-2.5">
                 <div class="flex justify-between items-center border-b border-slate-200/60 pb-2">
                     <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Nama Pelanggan</span>
@@ -76,7 +148,6 @@
                     <span class="font-medium text-sm text-slate-700 truncate max-w-[200px]" id="pop-service">-</span>
                 </div>
             </div>
-            
             <button onclick="closeBookingModal()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 tracking-wide">
                 <i class="fas fa-check"></i> Oke, Saya Cek Sekarang!
             </button>
@@ -88,7 +159,6 @@
             <button onclick="closeDetailModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
                 <i class="fas fa-times"></i>
             </button>
-
             <div class="flex items-center gap-4 mb-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
                     <i class="fas fa-file-invoice"></i>
@@ -98,11 +168,9 @@
                     <p class="text-xs text-amber-800/60 font-mono">ID Booking: #<span id="detail-id">-</span></p>
                 </div>
             </div>
-
             <div id="detail-loader" class="py-12 text-center text-amber-900/40 italic">
                 <i class="fas fa-spinner fa-spin mr-2 text-xl"></i>Memuat detail data...
             </div>
-
             <div id="detail-content" class="hidden space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-amber-50/50 p-3.5 rounded-2xl">
@@ -114,7 +182,6 @@
                         <span class="font-bold text-amber-950 text-sm flex items-center gap-1.5"><i class="fas fa-dog text-xs opacity-50"></i> <span id="detail-pet">-</span></span>
                     </div>
                 </div>
-
                 <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/40">
                     <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1.5">Layanan Terpilih</span>
                     <div class="flex justify-between items-center">
@@ -122,7 +189,6 @@
                         <span class="font-black text-green-700 font-mono text-sm bg-white px-3 py-1 rounded-xl shadow-sm border border-green-100" id="detail-price">Rp 0</span>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-amber-50/50 p-3.5 rounded-2xl">
                         <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Waktu Mulai</span>
@@ -133,12 +199,10 @@
                         <span class="font-medium text-amber-950 text-xs font-mono" id="detail-end">-</span>
                     </div>
                 </div>
-
                 <div class="bg-amber-50/50 p-3.5 rounded-2xl">
                     <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Status Pengerjaan</span>
                     <span id="detail-status" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm">-</span>
                 </div>
-
                 <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Tambahan (Notes)</span>
                     <p class="text-xs text-slate-600 font-medium italic" id="detail-notes">-</p>
@@ -182,7 +246,7 @@
                 <h1 class="text-3xl font-bold text-amber-950">Welcome Back, Admin! 🐾</h1>
                 <p class="text-green-700 font-medium mt-1">Here's what's happening today.</p>
             </div>
-            <button class="bg-[#1a8a4d] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform">
+            <button onclick="openCreateModal()" class="bg-[#1a8a4d] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform">
                 + New Reservation <span class="text-xs opacity-70">✨</span>
             </button>
         </div>
@@ -284,10 +348,13 @@
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
-        // URL API POST Detail yang baru
-        const API_DETAIL_URL = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         
+        // Target API Endpoint Penanganan Modul ini
+        const API_SERVICES_MASTER = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
+        const API_CREATE_BOOKING = 'https://n8n-production-bdac.up.railway.app/webhook/c486d9fb-3277-49b3-87b5-fb56d4b69a71';
+
         let allData = [];
+        let masterServices = []; // Berisi array cache object layanan utuh
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
@@ -297,7 +364,6 @@
             try {
                 const res = await fetch(API_GET_URL);
                 allData = await res.json();
-                
                 allData.sort((a, b) => b.id - a.id);
 
                 if (allData.length > 0) {
@@ -311,7 +377,6 @@
                         fetchReportData();
                     }
                 }
-                
                 updateStats();
                 renderTable();
             } catch (err) {
@@ -344,13 +409,162 @@
             }
         }
 
+        // ==========================================
+        // FEATURE AREA: LOGIKA TAMBAH RESERVASI BARU
+        // ==========================================
+        async function openCreateModal() {
+            const modal = document.getElementById('create-booking-modal');
+            document.getElementById('booking-form').reset();
+            document.getElementById('form-booking-price-display').value = '';
+            document.getElementById('form-booking-price').value = '';
+            
+            // Set default waktu lokal saat ini di form agar memudahkan admin
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('form-start-date').value = now.toISOString().slice(0, 16);
+
+            // Fetch list master data service dari API
+            try {
+                const res = await fetch(API_SERVICES_MASTER);
+                masterServices = await res.json();
+                
+                // Ambil Unique Size (Distinct) memakai Set
+                const uniqueSizes = [...new Set(masterServices.map(item => item.size))];
+                
+                const sizeDropdown = document.getElementById('form-booking-size');
+                sizeDropdown.innerHTML = '<option value="" disabled selected>Pilih Size</option>';
+                uniqueSizes.forEach(size => {
+                    sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
+                });
+
+                // Tampilkan Modal Form dengan Animasi Smooth
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.add('opacity-100');
+                    modal.querySelector('div').classList.remove('scale-90');
+                    modal.querySelector('div').classList.add('scale-100');
+                }, 10);
+            } catch (error) {
+                console.error("Gagal memuat master services:", error);
+                Swal.fire('Koneksi Gagal', 'Gagal mengunduh struktur master layanan dari server.', 'error');
+            }
+        }
+
+        // Dipicu sewaktu dropdown Size berubah untuk mem-filter Layanan yang tersedia
+        function populateServiceDropdown() {
+            const selectedSize = document.getElementById('form-booking-size').value;
+            const serviceDropdown = document.getElementById('form-booking-service');
+            
+            // Filter data yang ukurannya sesuai saja
+            const filteredServices = masterServices.filter(item => item.size === selectedSize);
+            // Ambil Unique Service Name (Distinct)
+            const uniqueServiceNames = [...new Set(filteredServices.map(item => item.service_name))];
+
+            serviceDropdown.innerHTML = '<option value="" disabled selected>Pilih Layanan</option>';
+            uniqueServiceNames.forEach(name => {
+                serviceDropdown.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+
+            // Kosongkan harga karena opsi layanan berubah
+            document.getElementById('form-booking-price-display').value = '';
+            document.getElementById('form-booking-price').value = '';
+        }
+
+        // Otomatis mencari kecocokan harga berdasarkan kombinasi Size & Service Name
+        function updateCalculatedPrice() {
+            const selectedSize = document.getElementById('form-booking-size').value;
+            const selectedServiceName = document.getElementById('form-booking-service').value;
+
+            // Cari object data master yang cocok seutuhnya
+            const matchedService = masterServices.find(item => item.size === selectedSize && item.service_name === selectedServiceName);
+
+            if (matchedService) {
+                const purePrice = parseFloat(matchedService.price);
+                document.getElementById('form-booking-price-display').value = `Rp ${purePrice.toLocaleString('id-ID')}`;
+                document.getElementById('form-booking-price').value = purePrice.toFixed(3); // Menghasilkan: "70000.000"
+                // Tempelkan attribute data durasi menit ke elemen select untuk dibaca pas submit
+                document.getElementById('form-booking-service').setAttribute('data-duration', matchedService.duration_minutes);
+            }
+        }
+
+        function closeCreateModal() {
+            const modal = document.getElementById('create-booking-modal');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        // Penanganan Pengiriman Submit Data Baru ke Webhook POST n8n
+        async function handleCreateBookingSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('btn-submit-booking');
+
+            const customerName = document.getElementById('form-customer-name').value;
+            const petName = document.getElementById('form-pet-name').value;
+            const size = document.getElementById('form-booking-size').value;
+            const serviceName = document.getElementById('form-booking-service').value;
+            const price = document.getElementById('form-booking-price').value;
+            const notes = document.getElementById('form-notes').value || "None";
+            
+            // Manipulatif Penghitungan start_date & end_date ISO String berdasarkan durasi menit master data
+            const startDateObj = new Date(document.getElementById('form-start-date').value);
+            const durationMinutes = parseInt(document.getElementById('form-booking-service').getAttribute('data-duration') || 60);
+            const endDateObj = new Date(startDateObj.getTime() + (durationMinutes * 60 * 1000));
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses Pendaftaran...`;
+
+            // Bentuk Muatan Struktur Payload Data sesuai JSON Contoh Target
+            const payload = {
+                customer_name: customerName,
+                pet_name: petName,
+                service_name: serviceName,
+                size: size,
+                price: price,
+                start_date: startDateObj.toISOString(),
+                end_date: endDateObj.toISOString(),
+                status: "Pending",
+                note: notes,
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(API_CREATE_BOOKING, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Gagal menyimpan data");
+
+                closeCreateModal();
+                Swal.fire({
+                    title: 'Reservasi Sukses!',
+                    text: `Berhasil menjadwalkan grooming untuk ${petName} (${customerName})`,
+                    icon: 'success',
+                    confirmButtonColor: '#8fa88a'
+                });
+
+                // Perbarui dan unduh ulang isi tabel antrean utama live database
+                fetchData();
+                fetchReportData();
+            } catch (error) {
+                console.error("Gagal membuat booking:", error);
+                Swal.fire('Gagal Menyimpan', 'Terjadi gangguan transmisi data menuju n8n webhook server.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Daftarkan Booking Baru`;
+            }
+        }
+
         // POP-UP RESERVASI BARU
         function triggerNotification(booking) {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                 oscillator.connect(gainNode);
+                oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
@@ -377,21 +591,16 @@
             overlay.classList.remove('opacity-100');
             overlay.querySelector('div').classList.remove('scale-100');
             overlay.querySelector('div').classList.add('scale-90');
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-            }, 300);
+            setTimeout(() => { overlay.classList.add('hidden'); }, 300);
         }
 
-        // FUNGSI MEMBUKA MODAL DETAIL BARU DENGAN POST METHOD
+        // DETAIL PREVIEW MODAL POST HANDLER
         async function openDetailModal(id) {
             const overlay = document.getElementById('detail-modal-overlay');
             const loader = document.getElementById('detail-loader');
             const content = document.getElementById('detail-content');
 
-            // Set ID sementara di header detail
             document.getElementById('detail-id').innerText = id;
-
-            // Tampilkan modal dan loader terlebih dahulu
             overlay.classList.remove('hidden');
             loader.classList.remove('hidden');
             content.classList.add('hidden');
@@ -403,8 +612,7 @@
             }, 10);
 
             try {
-                // Mengirim Request POST membawa payload body JSON { id: ... }
-                const response = await fetch(API_DETAIL_URL, {
+                const response = await fetch(API_SERVICES_MASTER, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: parseInt(id) })
@@ -412,26 +620,22 @@
 
                 if (response.ok) {
                     const rawData = await response.json();
-                    // Antisipasi jika n8n mengembalikan data dibungkus dalam bentuk array
                     const data = Array.isArray(rawData) ? rawData[0] : rawData;
 
                     if (data) {
-                        // Memetakan data dari response API ke elemen modal
                         document.getElementById('detail-customer').innerText = data.customer_name || '-';
                         document.getElementById('detail-pet').innerText = data.pet_name || '-';
                         document.getElementById('detail-service').innerText = data.service_name || 'N/A';
                         document.getElementById('detail-price').innerText = `Rp ${(data.service_price || data.price || 0).toLocaleString('id-ID')}`;
                         document.getElementById('detail-start').innerText = formatDate(data.start_date);
                         document.getElementById('detail-end').innerText = data.end_date ? formatDate(data.end_date) : 'Belum selesai';
-                        document.getElementById('detail-notes').innerText = data.notes || 'Tidak ada catatan khusus.';
+                        document.getElementById('detail-notes').innerText = data.notes || data.note || 'Tidak ada catatan khusus.';
 
-                        // Render Badge Status Dinamis di dalam modal detail
                         const statusEl = document.getElementById('detail-status');
                         const formattedStatus = data.status ? data.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
                         statusEl.innerText = data.status || 'PENDING';
                         statusEl.className = `px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm status-${formattedStatus}`;
 
-                        // Tukar posisi loader ke content
                         loader.classList.add('hidden');
                         content.classList.remove('hidden');
                     } else {
@@ -446,15 +650,12 @@
             }
         }
 
-        // FUNGSI MENUTUP MODAL DETAIL
         function closeDetailModal() {
             const overlay = document.getElementById('detail-modal-overlay');
             overlay.classList.remove('opacity-100');
             overlay.querySelector('div').classList.remove('scale-100');
             overlay.querySelector('div').classList.add('scale-90');
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-            }, 300);
+            setTimeout(() => { overlay.classList.add('hidden'); }, 300);
         }
 
         function updateStats() {
@@ -483,17 +684,16 @@
                 const statusClass = `status-${formattedStatus}`;
                 const displayNo = start + index + 1;
                 
-                // Menambahkan `onclick="openDetailModal(${item.id})"` pada baris <tr> agar bisa di-klik
                 const row = `
                     <tr onclick="openDetailModal(${item.id})" class="table-row-hover border-b border-amber-50/50 last:border-0 h-1/6 cursor-pointer">
                         <td class="text-center text-amber-900/30 font-bold">${displayNo}</td>
-                        <td class="font-bold text-amber-900 truncate pr-2">${item.customer_name}</td>
+                        <td class="font-bold text-amber-900 truncate pr-2">${escapeHTML(item.customer_name)}</td>
                         <td class="truncate pr-2">
                             <span class="flex items-center gap-2">
-                                <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${item.pet_name}
+                                <span class="text-amber-800 opacity-20 italic font-normal text-[10px]">▢</span> ${escapeHTML(item.pet_name)}
                             </span>
                         </td>
-                        <td class="text-sm opacity-80 truncate pr-2">${item.service_name || 'N/A'}</td>
+                        <td class="text-sm opacity-80 truncate pr-2">${escapeHTML(item.service_name || 'N/A')}</td>
                         <td class="relative">
                             <span onclick="openStatusMenu(event, ${item.id})" class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusClass} cursor-pointer hover:brightness-95 transition flex items-center gap-2 w-max shadow-sm">
                                 ${item.status || 'PENDING'} <i class="fas fa-chevron-down text-[7px] opacity-50"></i>
@@ -510,7 +710,6 @@
         }
 
         function openStatusMenu(event, id) {
-            // event.stopPropagation mencegah agar fungsi detail (click <tr>) tidak ikut terpicu saat tombol status di-klik
             event.stopPropagation();
             selectedRowId = id;
             const modal = document.getElementById('status-modal');
@@ -534,7 +733,7 @@
                 start_date: originObj.start_date,
                 end_date: originObj.end_date,
                 status: newStatus,
-                notes: originObj.notes || "None",
+                notes: originObj.notes || originObj.note || "None",
                 created_at: originObj.created_at
             };
 
@@ -605,6 +804,7 @@
         changePage = (direction) => { currentPage += direction; renderTable(); };
         formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
         formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
+        function escapeHTML(str) { return (str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
 
         fetchData();
         fetchReportData();
