@@ -8,6 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -27,6 +29,7 @@
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(143, 168, 138, 0.15);
         }
+        
         /* Animasi pulse smooth untuk tombol simpan saat ada perubahan */
         @keyframes customPulse {
             0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4); }
@@ -34,6 +37,12 @@
         }
         .btn-changed-alert {
             animation: customPulse 2s infinite ease-in-out;
+        }
+
+        /* Customisasi Font SweetAlert2 agar matching dengan Plus Jakarta Sans */
+        .swal2-popup {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            border-radius: 24px !important;
         }
     </style>
 </head>
@@ -219,10 +228,7 @@
         const GET_URL = "https://n8n-production-bdac.up.railway.app/webhook/5d90783c-4a24-414e-bd69-7b73318458b3";
         const PUT_URL = "https://n8n-production-bdac.up.railway.app/webhook/d32543bb-6386-4b27-b127-93f6919a9186";
 
-        // Objek master penampung data asli dari server n8n (Murni/Belum Dimodifikasi)
         let serverDataState = {};
-        
-        // Status apakah ada perubahan terdeteksi
         let hasUnsavedChanges = false;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -238,30 +244,28 @@
                 if (!response.ok) throw new Error('Gagal mengambil data dari server.');
                 
                 const data = await response.json();
-
-                // Simpan salinan data asli ke state penampung internal
                 serverDataState = { ...data };
                 
-                // Jika status di DB lama memakai format teks lama, normalisasi ke opsi dropdown baru
                 if (serverDataState.store_status === "Buka & Menerima Booking") {
                     serverDataState.store_status = "Online";
                 } else if (serverDataState.store_status === "Tutup Sementara") {
                     serverDataState.store_status = "Tutup";
                 }
 
-                // Masukkan data ke komponen view form
                 applyStateToForm(serverDataState);
-                
-                // Reset status perubahan karena data baru saja sinkron dengan server
                 setChangesState(false);
 
             } catch (error) {
                 console.error("Fetch Error:", error);
-                alert("❌ Gagal memuat data konfigurasi dari n8n.");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Koneksi Gagal',
+                    text: 'Gagal memuat konfigurasi profile dari n8n cloud.',
+                    confirmButtonColor: '#647d5f'
+                });
             }
         }
 
-        // Fungsi pembantu memetakan data state objek ke value form input
         function applyStateToForm(state) {
             document.getElementById('input-id').value = state.id || 1;
             document.getElementById('input-name').value = state.company_name || "";
@@ -280,17 +284,15 @@
             document.getElementById('display-biz-name').innerText = state.company_name || "maxGrooming";
         }
 
-        // 2. DETEKSI REAL-TIME SETIAP PERUBAHAN KARAKTER (INPUT / SELECT)
+        // 2. DETEKSI PERUBAHAN INPUT
         function setupChangeDetection() {
             const formElements = document.querySelectorAll('.form-input-custom');
             formElements.forEach(element => {
-                // Dengarkan event 'input' untuk mengetik & 'change' untuk dropdown/waktu
                 element.addEventListener('input', checkFormDifferences);
                 element.addEventListener('change', checkFormDifferences);
             });
         }
 
-        // Memeriksa perbedaan nilai antara input screen saat ini dengan data murni database
         function checkFormDifferences() {
             const currentFormValues = {
                 company_name: document.getElementById('input-name').value,
@@ -307,10 +309,8 @@
                 tiktok_handle: document.getElementById('input-tiktok').value
             };
 
-            // Bandingkan field satu-per-satu
             let isChanged = false;
             for (let key in currentFormValues) {
-                // Gunting spasi kosong di ujung teks agar perbandingan akurat
                 let formVal = String(currentFormValues[key]).trim();
                 let serverVal = String(serverDataState[key] || '').trim();
 
@@ -319,11 +319,10 @@
                     break;
                 }
             }
-
             setChangesState(isChanged);
         }
 
-        // 3. PENGATUR STATE & PERUBAHAN GAYA TOMBOL (EYE-CATCHING EFFECT)
+        // 3. PENGATUR STATE & PERUBAHAN GAYA TOMBOL (EYE-CATCHING)
         function setChangesState(isChanged) {
             hasUnsavedChanges = isChanged;
             const saveButton = document.getElementById('btn-save');
@@ -331,57 +330,76 @@
             const protectionText = document.getElementById('status-protection-text');
 
             if (isChanged) {
-                // Ubah tombol simpan jadi menyala (Eye-catching)
                 saveButton.className = "px-6 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-2xl transition btn-changed-alert flex items-center gap-2";
-                saveButton.innerHTML = `<i class="fas fa-exclamation-circle text-white"></i> Simpan Perubahan *`;
-                
-                // Munculkan tombol undo
+                saveButton.innerHTML = `<i class="fas fa-exclamation-circle"></i> Simpan Perubahan *`;
                 undoButton.classList.remove('hidden');
                 
-                // Ubah text info alert panel kiri
-                protectionText.innerText = "⚠️ Deteksi Perubahan: Ada data yang dimodifikasi. Segera simpan atau batalkan dengan tombol undo.";
+                protectionText.innerText = "⚠️ Ada data yang dimodifikasi. Segera simpan atau batalkan perubahan.";
                 protectionText.className = "text-[11px] text-orange-700 font-bold block mt-0.5";
             } else {
-                // Kembalikan tombol simpan ke mode hijau earthy calm bawaan
                 saveButton.className = "px-6 py-3.5 bg-[#647d5f] hover:bg-[#53694f] text-white font-bold rounded-2xl transition shadow-md flex items-center gap-2";
                 saveButton.innerHTML = `<i class="fas fa-save"></i> Simpan Perubahan`;
-                
-                // Sembunyikan kembali tombol undo
                 undoButton.classList.add('hidden');
                 
-                // Kembalikan text info panel kiri
-                protectionText.innerText = "🛡️ Proteksi Aktif: Sistem mendeteksi form sama dengan database. Aman untuk bernavigasi.";
+                protectionText.innerText = "🛡️ Sistem sinkron dengan database. Aman untuk bernavigasi.";
                 protectionText.className = "text-[11px] text-amber-900/50 block mt-0.5";
             }
         }
 
-        // 4. ACTION: UNDO SEMUA PERUBAHAN VALUE FORM
+        // 4. ACTION: UNDO MENGGUNAKAN SWEETALERT2
         function undoAllChanges() {
-            if (confirm("🔄 Apakah Anda yakin ingin membatalkan semua perubahan dan mengembalikan isi data ke kondisi semula?")) {
-                applyStateToForm(serverDataState);
-                setChangesState(false);
-            }
-        }
-
-        // 5. PROTEKSI DIALOG JIKA MENUTUP TAB BROWSER / REFRESH
-        function setupBeforeUnloadProtection() {
-            window.addEventListener('beforeunload', (e) => {
-                if (hasUnsavedChanges) {
-                    // Memicu browser menampilkan standard warning dialog box pop-up
-                    e.preventDefault();
-                    e.returnValue = 'Anda memiliki perubahan data maxGrooming yang belum disimpan. Tetap keluar?';
+            Swal.fire({
+                title: 'Batalkan Perubahan?',
+                text: "Semua isian formulir akan dikembalikan ke data asli server.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#647d5f',
+                cancelButtonColor: '#f3f4f6',
+                confirmButtonText: 'Ya, Undo Semua',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    cancelButton: 'text-slate-700 border border-slate-200'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    applyStateToForm(serverDataState);
+                    setChangesState(false);
+                    Swal.fire({
+                        title: 'Direstorasi!',
+                        text: 'Formulir berhasil dikembalikan seperti semula.',
+                        icon: 'success',
+                        confirmButtonColor: '#647d5f',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 }
             });
         }
 
-        // 6. PROTEKSI NAVIGASI INTERNAL MENU SIDEBAR
+        // 5. NATIVE BROWSER TAB LEAVE PROTECTION
+        function setupBeforeUnloadProtection() {
+            window.addEventListener('beforeunload', (e) => {
+                if (hasUnsavedChanges) {
+                    e.preventDefault();
+                    e.returnValue = 'Perubahan belum disimpan!';
+                }
+            });
+        }
+
+        // 6. SIDEBAR MENU NAVIGATION GUARD DENGAN SWEETALERT2
         function handleNavigation(event, targetUrl) {
             if (hasUnsavedChanges) {
-                event.preventDefault(); // Gagalkan perpindahan halaman seketika
-                alert("🚫 Akses Ditolak! Anda memiliki perubahan profil yang belum disimpan.\n\nSilakan klik tombol 'Simpan Perubahan' (berwarna oranye) terlebih dahulu atau klik 'Undo Semua' untuk membatalkan.");
+                event.preventDefault();
+                
+                Swal.fire({
+                    title: 'Perubahan Belum Disimpan!',
+                    text: 'Anda memodifikasi data profil maxGrooming. Simpan perubahan terlebih dahulu atau batalkan sebelum pindah halaman.',
+                    icon: 'error',
+                    confirmButtonColor: '#e07a5f',
+                    confirmButtonText: 'Mengerti'
+                });
                 return false;
             }
-            // Jika aman tidak ada perubahan, teruskan navigasi ke link tujuan
             window.location.href = targetUrl;
             return true;
         }
@@ -389,9 +407,8 @@
         // 7. ACTION: PUT DATA UPDATE KE WEBHOOK SERVER N8N
         async function saveBusinessSettings() {
             const saveButton = document.getElementById('btn-save');
-            
             saveButton.disabled = true;
-            saveButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyimpan ke Cloud...`;
+            saveButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyimpan...`;
 
             const payload = {
                 id: parseInt(document.getElementById('input-id').value),
@@ -420,18 +437,28 @@
 
                 if (!response.ok) throw new Error('Gagal memperbarui ke server.');
 
-                // Perbarui state lokal dengan payload yang sukses dikirim
                 serverDataState = { ...payload };
                 applyStateToForm(serverDataState);
-                setChangesState(false); // Amankan status form kembali normal (hijau)
+                setChangesState(false);
 
-                alert("✨ Sukses Besar! Perubahan profil maxGrooming berhasil dikunci dan diamankan langsung ke database.");
+                Swal.fire({
+                    title: 'Berhasil Disimpan!',
+                    text: 'Informasi bisnis maxGrooming berhasil diperbarui langsung ke database.',
+                    icon: 'success',
+                    confirmButtonColor: '#647d5f'
+                });
 
             } catch (error) {
                 console.error("PUT Error:", error);
-                alert("❌ Terjadi kesalahan jaringan. Gagal memperbarui profil bisnis.");
+                Swal.fire({
+                    title: 'Gagal Menyimpan',
+                    text: 'Terjadi gangguan jaringan atau server saat mengirim data.',
+                    icon: 'error',
+                    confirmButtonColor: '#647d5f'
+                });
             } finally {
                 saveButton.disabled = false;
+                checkFormDifferences(); // hitung ulang state akhir form
             }
         }
     </script>
