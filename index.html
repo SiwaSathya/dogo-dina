@@ -6,7 +6,7 @@
     <title>PetGroom Pro - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -56,7 +56,7 @@
     </div>
 
     <div id="create-booking-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 opacity-0">
-        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl transform scale-90 transition-all duration-300 relative border border-amber-100 max-h-[90vh] overflow-y-auto">
             <button onclick="closeCreateModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
                 <i class="fas fa-times"></i>
             </button>
@@ -67,7 +67,7 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-bold text-amber-950">Buat Reservasi Baru</h3>
-                    <p class="text-xs text-green-700 font-medium">Tambah data antrean booking perawatan salon</p>
+                    <p class="text-xs text-green-700 font-medium">Tambah antrean jadwal transaksi perawatan salon</p>
                 </div>
             </div>
 
@@ -104,15 +104,15 @@
                         <input type="datetime-local" id="form-start-date" required class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-xs font-semibold text-amber-950">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Tarif Harga (Otomatis)</label>
+                        <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Tarif Harga</label>
                         <input type="text" id="form-booking-price-display" readonly placeholder="Rp 0" class="w-full px-4 py-3 rounded-xl border border-amber-100 bg-slate-50 text-sm font-black text-green-700 outline-none">
                         <input type="hidden" id="form-booking-price">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Catatan Tambahan (Notes)</label>
-                    <textarea id="form-notes" rows="2" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-medium text-amber-950" placeholder="Contoh: Hewan galak, kutu banyak, dll..."></textarea>
+                    <label class="block text-xs font-bold text-amber-900/60 uppercase mb-1">Catatan (Notes)</label>
+                    <textarea id="form-notes" rows="2" class="w-full px-4 py-3 rounded-xl border border-amber-200 focus:outline-none focus:border-amber-500 bg-amber-50/20 text-sm font-medium text-amber-950" placeholder="Keterangan opsional..."></textarea>
                 </div>
 
                 <div class="pt-2">
@@ -129,11 +129,14 @@
             <div class="absolute -right-8 -top-8 text-slate-100 text-9xl -rotate-12 pointer-events-none">
                 <i class="fas fa-paw"></i>
             </div>
+            
             <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-5 animate-bounce">
                 <i class="fas fa-bell"></i>
             </div>
+            
             <h3 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">🚨 BOOKING BARU MASUK!</h3>
             <p class="text-sm text-slate-500 mb-6">Sistem mendeteksi ada transaksi reservasi baru yang baru saja masuk ke database.</p>
+            
             <div class="bg-slate-50 rounded-2xl p-4 mb-6 text-left border border-slate-100 space-y-2.5">
                 <div class="flex justify-between items-center border-b border-slate-200/60 pb-2">
                     <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Nama Pelanggan</span>
@@ -148,6 +151,7 @@
                     <span class="font-medium text-sm text-slate-700 truncate max-w-[200px]" id="pop-service">-</span>
                 </div>
             </div>
+            
             <button onclick="closeBookingModal()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 tracking-wide">
                 <i class="fas fa-check"></i> Oke, Saya Cek Sekarang!
             </button>
@@ -159,6 +163,7 @@
             <button onclick="closeDetailModal()" class="absolute top-6 right-6 w-10 h-10 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-full flex items-center justify-center transition">
                 <i class="fas fa-times"></i>
             </button>
+
             <div class="flex items-center gap-4 mb-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center text-xl">
                     <i class="fas fa-file-invoice"></i>
@@ -168,9 +173,11 @@
                     <p class="text-xs text-amber-800/60 font-mono">ID Booking: #<span id="detail-id">-</span></p>
                 </div>
             </div>
+
             <div id="detail-loader" class="py-12 text-center text-amber-900/40 italic">
                 <i class="fas fa-spinner fa-spin mr-2 text-xl"></i>Memuat detail data...
             </div>
+
             <div id="detail-content" class="hidden space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-amber-50/50 p-3.5 rounded-2xl">
@@ -182,6 +189,7 @@
                         <span class="font-bold text-amber-950 text-sm flex items-center gap-1.5"><i class="fas fa-dog text-xs opacity-50"></i> <span id="detail-pet">-</span></span>
                     </div>
                 </div>
+
                 <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/40">
                     <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1.5">Layanan Terpilih</span>
                     <div class="flex justify-between items-center">
@@ -189,6 +197,7 @@
                         <span class="font-black text-green-700 font-mono text-sm bg-white px-3 py-1 rounded-xl shadow-sm border border-green-100" id="detail-price">Rp 0</span>
                     </div>
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-amber-50/50 p-3.5 rounded-2xl">
                         <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Waktu Mulai</span>
@@ -199,10 +208,12 @@
                         <span class="font-medium text-amber-950 text-xs font-mono" id="detail-end">-</span>
                     </div>
                 </div>
+
                 <div class="bg-amber-50/50 p-3.5 rounded-2xl">
                     <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1">Status Pengerjaan</span>
                     <span id="detail-status" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-block mt-1 shadow-sm">-</span>
                 </div>
+
                 <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Tambahan (Notes)</span>
                     <p class="text-xs text-slate-600 font-medium italic" id="detail-notes">-</p>
@@ -246,13 +257,13 @@
                 <h1 class="text-3xl font-bold text-amber-950">Welcome Back, Admin! 🐾</h1>
                 <p class="text-green-700 font-medium mt-1">Here's what's happening today.</p>
             </div>
+            
             <button onclick="openCreateModal()" class="bg-[#1a8a4d] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform">
                 + New Reservation <span class="text-xs opacity-70">✨</span>
             </button>
         </div>
 
         <div class="grid grid-cols-12 gap-8 flex-1 min-h-0 mb-2">
-            
             <div class="col-span-12 lg:col-span-3 flex flex-col justify-between h-full gap-3">
                 <div class="bg-card-green p-4 rounded-[24px] text-white relative flex-1 flex flex-col justify-between shadow-sm min-h-[85px]">
                     <p class="text-[10px] font-bold uppercase tracking-widest opacity-80">Active Appointments</p>
@@ -333,7 +344,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -349,12 +359,12 @@
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
         
-        // Target API Endpoint Penanganan Modul ini
+        // Konstanta Endpoint Baru Penanganan Pembuatan Data & List Layanan Master
         const API_SERVICES_MASTER = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         const API_CREATE_BOOKING = 'https://n8n-production-bdac.up.railway.app/webhook/c486d9fb-3277-49b3-87b5-fb56d4b69a71';
 
         let allData = [];
-        let masterServices = []; // Berisi array cache object layanan utuh
+        let masterServices = []; // Cache lokal penampung array objek layanan master
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
@@ -409,35 +419,36 @@
             }
         }
 
-        // ==========================================
-        // FEATURE AREA: LOGIKA TAMBAH RESERVASI BARU
-        // ==========================================
+        // ===============================================
+        // LOGIKA BARU: INTERAKSI MODAL PENDAFTARAN BARU
+        // ===============================================
         async function openCreateModal() {
             const modal = document.getElementById('create-booking-modal');
             document.getElementById('booking-form').reset();
             document.getElementById('form-booking-price-display').value = '';
             document.getElementById('form-booking-price').value = '';
             
-            // Set default waktu lokal saat ini di form agar memudahkan admin
+            // Mengatur default nilai waktu lokal saat ini ke input datetime-local
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('form-start-date').value = now.toISOString().slice(0, 16);
 
-            // Fetch list master data service dari API
             try {
                 const res = await fetch(API_SERVICES_MASTER);
                 masterServices = await res.json();
                 
-                // Ambil Unique Size (Distinct) memakai Set
+                // Ambil Unique Size secara Distinct memanfaatkan struktur Set
                 const uniqueSizes = [...new Set(masterServices.map(item => item.size))];
                 
                 const sizeDropdown = document.getElementById('form-booking-size');
                 sizeDropdown.innerHTML = '<option value="" disabled selected>Pilih Size</option>';
+                
+                // Urutkan manual jika diperlukan (Small, Medium, Large, XL) atau langsung tempel
                 uniqueSizes.forEach(size => {
-                    sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
+                    if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
                 });
 
-                // Tampilkan Modal Form dengan Animasi Smooth
+                // Munculkan Modal dengan Transisi CSS
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modal.classList.add('opacity-100');
@@ -445,45 +456,45 @@
                     modal.querySelector('div').classList.add('scale-100');
                 }, 10);
             } catch (error) {
-                console.error("Gagal memuat master services:", error);
-                Swal.fire('Koneksi Gagal', 'Gagal mengunduh struktur master layanan dari server.', 'error');
+                console.error("Gagal menarik master services:", error);
+                Swal.fire('Koneksi Terputus', 'Gagal memuat master data klasifikasi paket salon dari server.', 'error');
             }
         }
 
-        // Dipicu sewaktu dropdown Size berubah untuk mem-filter Layanan yang tersedia
+        // Dipicu dinamis ketika user merubah dropdown Size hewan
         function populateServiceDropdown() {
             const selectedSize = document.getElementById('form-booking-size').value;
             const serviceDropdown = document.getElementById('form-booking-service');
             
-            // Filter data yang ukurannya sesuai saja
+            // Saring objek data master yang ber-ukuran sama
             const filteredServices = masterServices.filter(item => item.size === selectedSize);
-            // Ambil Unique Service Name (Distinct)
+            // Ambil Unique Nama Layanan secara Distinct
             const uniqueServiceNames = [...new Set(filteredServices.map(item => item.service_name))];
 
             serviceDropdown.innerHTML = '<option value="" disabled selected>Pilih Layanan</option>';
             uniqueServiceNames.forEach(name => {
-                serviceDropdown.innerHTML += `<option value="${name}">${name}</option>`;
+                if(name) serviceDropdown.innerHTML += `<option value="${name}">${name}</option>`;
             });
 
-            // Kosongkan harga karena opsi layanan berubah
+            // Reset value harga karena pilihan size berganti
             document.getElementById('form-booking-price-display').value = '';
             document.getElementById('form-booking-price').value = '';
         }
 
-        // Otomatis mencari kecocokan harga berdasarkan kombinasi Size & Service Name
+        // Otomatis menyeimbangkan kombinasi pencarian harga & durasi
         function updateCalculatedPrice() {
             const selectedSize = document.getElementById('form-booking-size').value;
             const selectedServiceName = document.getElementById('form-booking-service').value;
 
-            // Cari object data master yang cocok seutuhnya
+            // Cari objek data master tunggal yang kawin / cocok kriterianya
             const matchedService = masterServices.find(item => item.size === selectedSize && item.service_name === selectedServiceName);
 
             if (matchedService) {
-                const purePrice = parseFloat(matchedService.price);
+                const purePrice = parseFloat(matchedService.price || 0);
                 document.getElementById('form-booking-price-display').value = `Rp ${purePrice.toLocaleString('id-ID')}`;
-                document.getElementById('form-booking-price').value = purePrice.toFixed(3); // Menghasilkan: "70000.000"
-                // Tempelkan attribute data durasi menit ke elemen select untuk dibaca pas submit
-                document.getElementById('form-booking-service').setAttribute('data-duration', matchedService.duration_minutes);
+                document.getElementById('form-booking-price').value = purePrice.toFixed(3); // format string decimal: "70000.000"
+                // Rekatkan atribut data durasi menit ke elemen select untuk kalkulasi waktu penyelesaian nanti
+                document.getElementById('form-booking-service').setAttribute('data-duration', matchedService.duration_minutes || 60);
             }
         }
 
@@ -495,7 +506,7 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
-        // Penanganan Pengiriman Submit Data Baru ke Webhook POST n8n
+        // Mengatur transmisi AJAX POST Data menuju Webhook n8n Anda
         async function handleCreateBookingSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-booking');
@@ -505,17 +516,17 @@
             const size = document.getElementById('form-booking-size').value;
             const serviceName = document.getElementById('form-booking-service').value;
             const price = document.getElementById('form-booking-price').value;
-            const notes = document.getElementById('form-notes').value || "None";
+            const notes = document.getElementById('form-notes').value || "test";
             
-            // Manipulatif Penghitungan start_date & end_date ISO String berdasarkan durasi menit master data
+            // Otomatis menghitung end_date berlandaskan durasi waktu pengerjaan paket layanan
             const startDateObj = new Date(document.getElementById('form-start-date').value);
             const durationMinutes = parseInt(document.getElementById('form-booking-service').getAttribute('data-duration') || 60);
             const endDateObj = new Date(startDateObj.getTime() + (durationMinutes * 60 * 1000));
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Memproses Pendaftaran...`;
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sedang Menyimpan...`;
 
-            // Bentuk Muatan Struktur Payload Data sesuai JSON Contoh Target
+            // Struktur Payload Sempurna sesuai dengan cetak biru request yang Anda minta
             const payload = {
                 customer_name: customerName,
                 pet_name: petName,
@@ -536,22 +547,22 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error("Gagal menyimpan data");
+                if (!response.ok) throw new Error("Server menolak pemrosesan data");
 
                 closeCreateModal();
                 Swal.fire({
-                    title: 'Reservasi Sukses!',
-                    text: `Berhasil menjadwalkan grooming untuk ${petName} (${customerName})`,
+                    title: 'Reservasi Ditambahkan!',
+                    text: `Berhasil menjadwalkan pesanan atas nama ${customerName} (${petName})`,
                     icon: 'success',
                     confirmButtonColor: '#8fa88a'
                 });
 
-                // Perbarui dan unduh ulang isi tabel antrean utama live database
+                // Sinkronisasi ulang data tabel dashboard utama
                 fetchData();
                 fetchReportData();
             } catch (error) {
-                console.error("Gagal membuat booking:", error);
-                Swal.fire('Gagal Menyimpan', 'Terjadi gangguan transmisi data menuju n8n webhook server.', 'error');
+                console.error("Pendaftaran Gagal:", error);
+                Swal.fire('Proses Gagal', 'Gagal mengirimkan data pendaftaran baru menuju webhook n8n.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Daftarkan Booking Baru`;
@@ -612,6 +623,7 @@
             }, 10);
 
             try {
+                // Sebagai pelengkap integrasi agar modal detail bawaan Anda tetap jalan normal
                 const response = await fetch(API_SERVICES_MASTER, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -809,6 +821,7 @@
         fetchData();
         fetchReportData();
         
+        // Polling Real-time
         setInterval(() => {
             fetchData();
             fetchReportData();
