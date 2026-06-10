@@ -358,13 +358,14 @@
         const API_GET_URL = 'https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d';
         const API_PUT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/aea67038-b694-45e3-befd-292c53e741a6';
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
+        const API_DETAIL_URL = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         
-        // Konstanta Endpoint Baru Penanganan Pembuatan Data & List Layanan Master
+        // Konstanta Webhook Baru Untuk Membuat Data Booking & Mengambil List Master Paket Layanan
         const API_SERVICES_MASTER = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         const API_CREATE_BOOKING = 'https://n8n-production-bdac.up.railway.app/webhook/c486d9fb-3277-49b3-87b5-fb56d4b69a71';
 
         let allData = [];
-        let masterServices = []; // Cache lokal penampung array objek layanan master
+        let masterServices = []; // Cache lokal menampung array objek layanan master
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
@@ -428,27 +429,27 @@
             document.getElementById('form-booking-price-display').value = '';
             document.getElementById('form-booking-price').value = '';
             
-            // Mengatur default nilai waktu lokal saat ini ke input datetime-local
+            // Set default waktu lokal saat ini ke input datetime-local
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('form-start-date').value = now.toISOString().slice(0, 16);
 
             try {
+                // Fetch data master services menggunakan GET untuk populate dropdown
                 const res = await fetch(API_SERVICES_MASTER);
                 masterServices = await res.json();
                 
-                // Ambil Unique Size secara Distinct memanfaatkan struktur Set
+                // Ambil Unique Size secara Distinct memanfaatkan Set
                 const uniqueSizes = [...new Set(masterServices.map(item => item.size))];
                 
                 const sizeDropdown = document.getElementById('form-booking-size');
                 sizeDropdown.innerHTML = '<option value="" disabled selected>Pilih Size</option>';
                 
-                // Urutkan manual jika diperlukan (Small, Medium, Large, XL) atau langsung tempel
                 uniqueSizes.forEach(size => {
                     if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
                 });
 
-                // Munculkan Modal dengan Transisi CSS
+                // Tampilkan Modal dengan Animasi CSS Tradisional
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modal.classList.add('opacity-100');
@@ -468,7 +469,6 @@
             
             // Saring objek data master yang ber-ukuran sama
             const filteredServices = masterServices.filter(item => item.size === selectedSize);
-            // Ambil Unique Nama Layanan secara Distinct
             const uniqueServiceNames = [...new Set(filteredServices.map(item => item.service_name))];
 
             serviceDropdown.innerHTML = '<option value="" disabled selected>Pilih Layanan</option>';
@@ -481,18 +481,19 @@
             document.getElementById('form-booking-price').value = '';
         }
 
-        // Otomatis menyeimbangkan kombinasi pencarian harga & durasi
+        // Menghubungkan relasi harga berdasarkan paket yang dipilih
         function updateCalculatedPrice() {
             const selectedSize = document.getElementById('form-booking-size').value;
             const selectedServiceName = document.getElementById('form-booking-service').value;
 
-            // Cari objek data master tunggal yang kawin / cocok kriterianya
+            // Cari objek data master tunggal yang kawin kriterianya
             const matchedService = masterServices.find(item => item.size === selectedSize && item.service_name === selectedServiceName);
 
             if (matchedService) {
                 const purePrice = parseFloat(matchedService.price || 0);
                 document.getElementById('form-booking-price-display').value = `Rp ${purePrice.toLocaleString('id-ID')}`;
                 document.getElementById('form-booking-price').value = purePrice.toFixed(3); // format string decimal: "70000.000"
+                
                 // Rekatkan atribut data durasi menit ke elemen select untuk kalkulasi waktu penyelesaian nanti
                 document.getElementById('form-booking-service').setAttribute('data-duration', matchedService.duration_minutes || 60);
             }
@@ -506,7 +507,7 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
-        // Mengatur transmisi AJAX POST Data menuju Webhook n8n Anda
+        // Menghandle pengiriman data form via POST request ke n8n
         async function handleCreateBookingSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-booking');
@@ -526,7 +527,6 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sedang Menyimpan...`;
 
-            // Struktur Payload Sempurna sesuai dengan cetak biru request yang Anda minta
             const payload = {
                 customer_name: customerName,
                 pet_name: petName,
@@ -557,12 +557,11 @@
                     confirmButtonColor: '#8fa88a'
                 });
 
-                // Sinkronisasi ulang data tabel dashboard utama
                 fetchData();
                 fetchReportData();
             } catch (error) {
                 console.error("Pendaftaran Gagal:", error);
-                Swal.fire('Proses Gagal', 'Gagal mengirimkan data pendaftaran baru menuju webhook n8n.', 'error');
+                Swal.fire('Proses Gagal', 'Gagal mengirimkan data pendaftaran baru.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Daftarkan Booking Baru`;
@@ -605,7 +604,7 @@
             setTimeout(() => { overlay.classList.add('hidden'); }, 300);
         }
 
-        // DETAIL PREVIEW MODAL POST HANDLER
+        // MODAL DETAIL VIEW DENGAN POST METHOD
         async function openDetailModal(id) {
             const overlay = document.getElementById('detail-modal-overlay');
             const loader = document.getElementById('detail-loader');
@@ -623,8 +622,7 @@
             }, 10);
 
             try {
-                // Sebagai pelengkap integrasi agar modal detail bawaan Anda tetap jalan normal
-                const response = await fetch(API_SERVICES_MASTER, {
+                const response = await fetch(API_DETAIL_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: parseInt(id) })
@@ -821,7 +819,6 @@
         fetchData();
         fetchReportData();
         
-        // Polling Real-time
         setInterval(() => {
             fetchData();
             fetchReportData();
