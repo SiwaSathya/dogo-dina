@@ -114,33 +114,40 @@
 
         <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6 flex flex-col min-h-0">
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 flex-shrink-0">
-                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
-                    <div class="w-11 h-11 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-stopwatch"></i></div>
-                    <div>
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Response Time</span>
-                        <span class="block text-lg font-extrabold text-amber-950" id="card-avg-time">0.00s</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 flex-shrink-0">
+                <div class="bg-white p-4 rounded-2xl border border-amber-100 flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center text-sm flex-shrink-0"><i class="fas fa-stopwatch"></i></div>
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">Avg Response Time</span>
+                        <span class="block text-base font-extrabold text-amber-950 truncate" id="card-avg-time">0.00s</span>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
-                    <div class="w-11 h-11 bg-emerald-50 text-emerald-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-bullseye"></i></div>
-                    <div>
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Akurasi Jawaban</span>
-                        <span class="block text-lg font-extrabold text-amber-950">100 %</span>
+                <div class="bg-white p-4 rounded-2xl border border-amber-100 flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 bg-emerald-50 text-emerald-700 rounded-xl flex items-center justify-center text-sm flex-shrink-0"><i class="fas fa-bullseye"></i></div>
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">Akurasi Jawaban</span>
+                        <span class="block text-base font-extrabold text-amber-950 truncate">100 %</span>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
-                    <div class="w-11 h-11 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-comments"></i></div>
-                    <div>
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sesi Obrolan</span>
-                        <span class="block text-lg font-extrabold text-amber-950" id="card-total-chat">0 Sesi</span>
+                <div class="bg-white p-4 rounded-2xl border border-amber-100 flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center text-sm flex-shrink-0"><i class="fas fa-comments"></i></div>
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Sesi Obrolan</span>
+                        <span class="block text-base font-extrabold text-amber-950 truncate" id="card-total-chat">0 Sesi</span>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-2xl border border-amber-100 flex items-center gap-4 shadow-xs">
-                    <div class="w-11 h-11 bg-rose-50 text-rose-700 rounded-xl flex items-center justify-center text-base"><i class="fas fa-exclamation-circle"></i></div>
-                    <div>
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Hallucination</span>
-                        <span class="block text-lg font-extrabold text-amber-950">0.00 %</span>
+                <div class="bg-white p-4 rounded-2xl border border-amber-100 flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 bg-rose-50 text-rose-700 rounded-xl flex items-center justify-center text-sm flex-shrink-0"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">AI Hallucination</span>
+                        <span class="block text-base font-extrabold text-amber-950 truncate">0.00 %</span>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-white p-4 rounded-2xl border border-purple-100 flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-sm flex-shrink-0"><i class="fas fa-trophy"></i></div>
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold text-purple-900/50 uppercase tracking-wider truncate">Goal Completion (GCR)</span>
+                        <span class="block text-base font-extrabold text-purple-950 truncate" id="card-gcr-rate">0.00 %</span>
                     </div>
                 </div>
             </div>
@@ -177,7 +184,7 @@
                             </tr>
                         </thead>
                         <tbody id="metrics-table-body" class="divide-y divide-amber-50/50">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -187,6 +194,8 @@
 
     <script>
         const API_GET_METRICS = "https://n8n-production-bdac.up.railway.app/webhook/c30dd3f6-242e-4a81-832e-43814fbc1189";
+        // ENDPOINT LIVE DATA BOOKING
+        const API_GET_BOOKINGS = "https://n8n-production-bdac.up.railway.app/webhook/55218dcf-9a04-45e6-b2ac-1fea1528c08d";
         
         let globalMetricsStorage = []; 
         let myPerformanceChart = null;
@@ -195,22 +204,28 @@
             fetchLiveMetrics();
         });
 
-        // 1. AMBIL DATA DARI ENDPOINT LIVE N8N
+        // 1. AMBIL DATA DARI ENDPOINT LIVE N8N & DATA BOOKING
         async function fetchLiveMetrics() {
             const refreshIcon = document.getElementById('refresh-icon');
             if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
             try {
-                const response = await fetch(API_GET_METRICS);
-                if (!response.ok) throw new Error("Gagal mengambil respon dari server.");
+                // Fetch paralel data metrics dan data booking secara bersamaan agar optimal
+                const [metricsRes, bookingsRes] = await Promise.all([
+                    fetch(API_GET_METRICS),
+                    fetch(API_GET_BOOKINGS)
+                ]);
+
+                if (!metricsRes.ok || !bookingsRes.ok) throw new Error("Gagal mengambil data dari server.");
                 
-                const data = await response.json();
+                const dataMetrics = await metricsRes.json();
+                const dataBookings = await bookingsRes.json();
                 
                 // Urutkan ID terbesar (terbaru) berada di baris atas tabel
-                globalMetricsStorage = data.sort((a, b) => b.id - a.id);
+                globalMetricsStorage = dataMetrics.sort((a, b) => b.id - a.id);
 
-                // Proses penghitungan Metrik & Rendering Komponen
-                calculateTopCards(globalMetricsStorage);
+                // Proses penghitungan Metrik, GCR & Rendering Komponen
+                calculateTopCards(globalMetricsStorage, dataBookings);
                 renderMetricsTable(globalMetricsStorage);
                 initOrUpdateMetricsChart(globalMetricsStorage);
 
@@ -227,21 +242,27 @@
             }
         }
 
-        // 2. HITUNG KARTU UTAMA SECARA OTOMATIS
-        function calculateTopCards(data) {
-            if(data.length === 0) return;
-
-            let totalChat = data.length;
+        // 2. HITUNG KARTU UTAMA & KALKULASI RASIO GCR SECARA OTOMATIS
+        function calculateTopCards(metricsData, bookingsData) {
+            let totalChat = metricsData.length;
+            let totalBookings = Array.isArray(bookingsData) ? bookingsData.length : 0;
             let sumTimes = 0;
 
-            data.forEach(item => {
+            metricsData.forEach(item => {
                 sumTimes += parseFloat(item.times || 0);
             });
 
-            let avgTime = (sumTimes / totalChat).toFixed(2);
+            let avgTime = totalChat > 0 ? (sumTimes / totalChat).toFixed(2) : "0.00";
+            
+            // Kalkulasi Goal Completion Rate (GCR)
+            let gcrRate = 0;
+            if (totalChat > 0) {
+                gcrRate = ((totalBookings / totalChat) * 100).toFixed(2);
+            }
 
-            document.getElementById('card-total-chat').innerText = `${totalChat} Chat`;
+            document.getElementById('card-total-chat').innerText = `${totalChat} Sesi`;
             document.getElementById('card-avg-time').innerText = `${avgTime} Detik`;
+            document.getElementById('card-gcr-rate').innerText = `${gcrRate} %`;
         }
 
         // 3. RENDER TABEL LOG BERDASARKAN API DATA
@@ -279,7 +300,6 @@
 
         // 4. CHART.JS INTEGRATION (SINKRON DATA)
         function initOrUpdateMetricsChart(data) {
-            // Balikkan urutan agar grafik membaca dari ID terkecil ke terbesar (kiri ke kanan)
             const sortedForChart = [...data].sort((a, b) => a.id - b.id);
             
             const labels = sortedForChart.map(item => `Chat #${item.id}`);
@@ -288,12 +308,10 @@
             const ctx = document.getElementById('metricsChart').getContext('2d');
 
             if (myPerformanceChart) {
-                // Jika chart sudah ada, timpa datanya agar langsung terupdate
                 myPerformanceChart.data.labels = labels;
                 myPerformanceChart.data.datasets[0].data = speedDataset;
                 myPerformanceChart.update();
             } else {
-                // Pembuatan objek Chart pertama kali
                 myPerformanceChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -381,7 +399,7 @@
             await fetchLiveMetrics();
             Swal.fire({
                 title: 'Data Diperbarui!',
-                text: 'Metrik performa responsivitas Clara AI telah disinkronkan ke kondisi terbaru.',
+                text: 'Metrik performa responsivitas & GCR Clara AI telah disinkronkan ke kondisi terbaru.',
                 icon: 'success',
                 confirmButtonColor: '#647d5f',
                 timer: 2000,
@@ -389,7 +407,6 @@
             });
         }
 
-        // Helper untuk mencegah serangan XSS dari inputan chat
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, 
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
