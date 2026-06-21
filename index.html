@@ -26,6 +26,7 @@
         .status-in-progress { background-color: #90caf9; color: #0d47a1; }
         .status-completed { background-color: #a5d6a7; color: #1b5e20; }
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
+        .status-reschedule { background-color: #e1bee7; color: #4a148c; } /* Warna baru untuk Reschedule */
         
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .table-row-hover:hover { background-color: #fcfbfa; transition: 0.2s; }
@@ -347,10 +348,12 @@
         </div>
     </main>
 
+    <!-- UPDATE MODAL: Menambahkan Opsi Reschedule -->
     <div id="status-modal" class="hidden fixed bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-40 w-44 flex flex-col gap-1 transition-all">
         <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
         <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
         <button onclick="submitStatusUpdate('Completed')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-completed">Completed</button>
+        <button onclick="submitStatusUpdate('Reschedule')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-reschedule">Reschedule</button>
         <button onclick="submitStatusUpdate('Cancelled')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-cancelled">Cancelled</button>
     </div>
 
@@ -360,12 +363,15 @@
         const API_REPORT_URL = 'https://n8n-production-bdac.up.railway.app/webhook/a957c972-e195-4539-a0f1-3c4e1f70dcd1';
         const API_DETAIL_URL = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         
-        // Konstanta Webhook Baru Untuk Membuat Data Booking & Mengambil List Master Paket Layanan
         const API_SERVICES_MASTER = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         const API_CREATE_BOOKING = 'https://n8n-production-bdac.up.railway.app/webhook/c486d9fb-3277-49b3-87b5-fb56d4b69a71';
 
+        // NEW API ENDPOINTS
+        const API_RESCHEDULE_TRIGGER = 'https://n8n-production-bdac.up.railway.app/webhook/554d63bd-66fe-40c2-b954-7c22fffc950e';
+        const API_CANCEL_TRIGGER = 'https://n8n-production-bdac.up.railway.app/webhook/8d265705-c232-456e-856e-eb8452c50f2e';
+
         let allData = [];
-        let masterServices = []; // Cache lokal menampung array objek layanan master
+        let masterServices = []; 
         let currentPage = 1;
         const rowsPerPage = 6;
         let selectedRowId = null;
@@ -420,36 +426,28 @@
             }
         }
 
-        // ===============================================
-        // LOGIKA BARU: INTERAKSI MODAL PENDAFTARAN BARU
-        // ===============================================
         async function openCreateModal() {
             const modal = document.getElementById('create-booking-modal');
             document.getElementById('booking-form').reset();
             document.getElementById('form-booking-price-display').value = '';
             document.getElementById('form-booking-price').value = '';
             
-            // Set default waktu lokal saat ini ke input datetime-local
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('form-start-date').value = now.toISOString().slice(0, 16);
 
             try {
-                // Fetch data master services menggunakan GET untuk populate dropdown
                 const res = await fetch(API_SERVICES_MASTER);
                 masterServices = await res.json();
                 
-                // Ambil Unique Size secara Distinct memanfaatkan Set
                 const uniqueSizes = [...new Set(masterServices.map(item => item.size))];
-                
                 const sizeDropdown = document.getElementById('form-booking-size');
                 sizeDropdown.innerHTML = '<option value="" disabled selected>Pilih Size</option>';
                 
                 uniqueSizes.forEach(size => {
-                    if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
+                    if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>';
                 });
 
-                // Tampilkan Modal dengan Animasi CSS Tradisional
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modal.classList.add('opacity-100');
@@ -462,12 +460,10 @@
             }
         }
 
-        // Dipicu dinamis ketika user merubah dropdown Size hewan
         function populateServiceDropdown() {
             const selectedSize = document.getElementById('form-booking-size').value;
             const serviceDropdown = document.getElementById('form-booking-service');
             
-            // Saring objek data master yang ber-ukuran sama
             const filteredServices = masterServices.filter(item => item.size === selectedSize);
             const uniqueServiceNames = [...new Set(filteredServices.map(item => item.service_name))];
 
@@ -476,25 +472,20 @@
                 if(name) serviceDropdown.innerHTML += `<option value="${name}">${name}</option>`;
             });
 
-            // Reset value harga karena pilihan size berganti
             document.getElementById('form-booking-price-display').value = '';
             document.getElementById('form-booking-price').value = '';
         }
 
-        // Menghubungkan relasi harga berdasarkan paket yang dipilih
         function updateCalculatedPrice() {
             const selectedSize = document.getElementById('form-booking-size').value;
             const selectedServiceName = document.getElementById('form-booking-service').value;
 
-            // Cari objek data master tunggal yang kawin kriterianya
             const matchedService = masterServices.find(item => item.size === selectedSize && item.service_name === selectedServiceName);
 
             if (matchedService) {
                 const purePrice = parseFloat(matchedService.price || 0);
                 document.getElementById('form-booking-price-display').value = `Rp ${purePrice.toLocaleString('id-ID')}`;
-                document.getElementById('form-booking-price').value = purePrice.toFixed(3); // format string decimal: "70000.000"
-                
-                // Rekatkan atribut data durasi menit ke elemen select untuk kalkulasi waktu penyelesaian nanti
+                document.getElementById('form-booking-price').value = purePrice.toFixed(3); 
                 document.getElementById('form-booking-service').setAttribute('data-duration', matchedService.duration_minutes || 60);
             }
         }
@@ -507,7 +498,6 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
-        // Menghandle pengiriman data form via POST request ke n8n
         async function handleCreateBookingSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('btn-submit-booking');
@@ -519,7 +509,6 @@
             const price = document.getElementById('form-booking-price').value;
             const notes = document.getElementById('form-notes').value || "test";
             
-            // Otomatis menghitung end_date berlandaskan durasi waktu pengerjaan paket layanan
             const startDateObj = new Date(document.getElementById('form-start-date').value);
             const durationMinutes = parseInt(document.getElementById('form-booking-service').getAttribute('data-duration') || 60);
             const endDateObj = new Date(startDateObj.getTime() + (durationMinutes * 60 * 1000));
@@ -568,7 +557,6 @@
             }
         }
 
-        // POP-UP RESERVASI BARU
         function triggerNotification(booking) {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -604,7 +592,6 @@
             setTimeout(() => { overlay.classList.add('hidden'); }, 300);
         }
 
-        // MODAL DETAIL VIEW DENGAN POST METHOD
         async function openDetailModal(id) {
             const overlay = document.getElementById('detail-modal-overlay');
             const loader = document.getElementById('detail-loader');
@@ -673,7 +660,7 @@
             let revenue = 0;
             allData.forEach(item => {
                 const statusLower = (item.status || '').toLowerCase();
-                if(statusLower === 'pending' || statusLower === 'in progress') active++;
+                if(statusLower === 'pending' || statusLower === 'in progress' || statusLower === 'reschedule') active++;
                 revenue += parseFloat(item.price || 0);
             });
             document.getElementById('stat-active').innerText = active;
@@ -728,11 +715,85 @@
             modal.style.left = `${event.clientX - 60}px`;
         }
 
+        // LOGIKA UTAMA INTEGRASI 2 API BARU UNTUK UPDATE STATUS
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
             const originObj = allData.find(d => parseInt(d.id) === parseInt(selectedRowId));
             if(!originObj) return;
 
+            // Sembunyikan menu status popover terlebih dahulu
+            document.getElementById('status-modal').classList.add('hidden');
+
+            // KRITERIA 1: TRIGGER API JIKA STATUS = CANCELLED
+            if (newStatus === 'Cancelled') {
+                showToast("Mengirim notifikasi pembatalan...", true);
+                try {
+                    await fetch(API_CANCEL_TRIGGER, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name_customer: originObj.customer_name,
+                            number_customer: originObj.phone_number || originObj.customer_phone || "6281246746772" // default fallback jika kolom telepon berbeda
+                        })
+                    });
+                } catch (e) {
+                    console.error("Gagal menembak API pembatalan:", e);
+                }
+            }
+
+            // KRITERIA 2: JIKA STATUS = RESCHEDULE, TANYAKAN TANGGAL BARU DAHULU
+            if (newStatus === 'Reschedule') {
+                const { value: formValues } = await Swal.fire({
+                    title: 'Atur Jadwal Ulang (Reschedule)',
+                    html: `
+                        <label class="block text-left text-xs font-bold text-slate-500 mb-1">PILIH TANGGAL & JAM BARU</label>
+                        <input type="datetime-local" id="swal-reschedule-date" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none">
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonColor: '#a2c2cf',
+                    confirmButtonText: 'Simpan & Kirim API',
+                    preConfirm: () => {
+                        const dateVal = document.getElementById('swal-reschedule-date').value;
+                        if (!dateVal) {
+                            Swal.showValidationMessage('Tanggal baru wajib diisi!');
+                        }
+                        return dateVal;
+                    }
+                });
+
+                if (!formValues) return; // User membatalkan aksi dialog modal
+
+                showToast("Memproses data reschedule...", true);
+
+                // Format datetime-local ke format string mysql ("YYYY-MM-DD HH:mm:ss.SSS")
+                const d = new Date(formValues);
+                const formattedDate = d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0') + ' ' +
+                    String(d.getHours()).padStart(2, '0') + ':' +
+                    String(d.getMinutes()).padStart(2, '0') + ':00.000';
+
+                try {
+                    await fetch(API_RESCHEDULE_TRIGGER, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name_customer: originObj.customer_name,
+                            number_customer: originObj.phone_number || originObj.customer_phone || "6281246746772",
+                            name_anabul: originObj.pet_name,
+                            date_booked: formattedDate
+                        })
+                    });
+                    
+                    // Update properti tanggal objek lokal sebelum dikirim ke API utama (PUT)
+                    originObj.start_date = d.toISOString();
+                } catch (e) {
+                    console.error("Gagal menembak API reschedule:", e);
+                }
+            }
+
+            // LANJUTKAN EKSEKUSI DATA UTAMA KE DATABASE (PUT REQUEST)
             showToast("Updating status...", true);
 
             const payload = {
