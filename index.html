@@ -26,7 +26,7 @@
         .status-in-progress { background-color: #90caf9; color: #0d47a1; }
         .status-completed { background-color: #a5d6a7; color: #1b5e20; }
         .status-cancelled { background-color: #ef9a9a; color: #b71c1c; }
-        .status-reschedule { background-color: #e1bee7; color: #4a148c; } /* Warna baru untuk Reschedule */
+        .status-reschedule { background-color: #e1bee7; color: #4a148c; }
         
         .custom-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .table-row-hover:hover { background-color: #fcfbfa; transition: 0.2s; }
@@ -339,7 +339,7 @@
                             <i class="fas fa-chevron-left text-xs"></i>
                         </button>
                         <div id="page-numbers" class="flex gap-2"></div>
-                        <button id="next-btn" onclick="changePage(1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
+                        <button id="next-btn" onclick="changePage(Direction)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
                             <i class="fas fa-chevron-right text-xs"></i>
                         </button>
                     </div>
@@ -348,7 +348,6 @@
         </div>
     </main>
 
-    <!-- UPDATE MODAL: Menambahkan Opsi Reschedule -->
     <div id="status-modal" class="hidden fixed bg-white p-2 rounded-2xl shadow-xl border border-amber-100 z-40 w-44 flex flex-col gap-1 transition-all">
         <button onclick="submitStatusUpdate('Pending')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-pending">Pending</button>
         <button onclick="submitStatusUpdate('In Progress')" class="w-full text-left px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-amber-50 status-in-progress">In Progress</button>
@@ -366,7 +365,6 @@
         const API_SERVICES_MASTER = 'https://n8n-production-bdac.up.railway.app/webhook/06b775c2-31bc-4f33-8de2-006f3393d77f';
         const API_CREATE_BOOKING = 'https://n8n-production-bdac.up.railway.app/webhook/c486d9fb-3277-49b3-87b5-fb56d4b69a71';
 
-        // NEW API ENDPOINTS
         const API_RESCHEDULE_TRIGGER = 'https://n8n-production-bdac.up.railway.app/webhook/554d63bd-66fe-40c2-b954-7c22fffc950e';
         const API_CANCEL_TRIGGER = 'https://n8n-production-bdac.up.railway.app/webhook/8d265705-c232-456e-856e-eb8452c50f2e';
 
@@ -445,7 +443,7 @@
                 sizeDropdown.innerHTML = '<option value="" disabled selected>Pilih Size</option>';
                 
                 uniqueSizes.forEach(size => {
-                    if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>';
+                    if(size) sizeDropdown.innerHTML += `<option value="${size}">${size}</option>`;
                 });
 
                 modal.classList.remove('hidden');
@@ -715,25 +713,22 @@
             modal.style.left = `${event.clientX - 60}px`;
         }
 
-        // LOGIKA UTAMA INTEGRASI 2 API BARU UNTUK UPDATE STATUS
         async function submitStatusUpdate(newStatus) {
             if(!selectedRowId) return;
             const originObj = allData.find(d => parseInt(d.id) === parseInt(selectedRowId));
             if(!originObj) return;
 
-            // Sembunyikan menu status popover terlebih dahulu
             document.getElementById('status-modal').classList.add('hidden');
 
-            // KRITERIA 1: TRIGGER API JIKA STATUS = CANCELLED
             if (newStatus === 'Cancelled') {
                 showToast("Mengirim notifikasi pembatalan...", true);
                 try {
-                    await fetch(API_CANCEL_TRIGGER, {
+                    fetch(API_CANCEL_TRIGGER, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name_customer: originObj.customer_name,
-                            number_customer: originObj.phone_number || originObj.customer_phone || "6281246746772" // default fallback jika kolom telepon berbeda
+                            number_customer: originObj.phone_number || originObj.customer_phone || "6281246746772"
                         })
                     });
                 } catch (e) {
@@ -741,7 +736,6 @@
                 }
             }
 
-            // KRITERIA 2: JIKA STATUS = RESCHEDULE, TANYAKAN TANGGAL BARU DAHULU
             if (newStatus === 'Reschedule') {
                 const { value: formValues } = await Swal.fire({
                     title: 'Atur Jadwal Ulang (Reschedule)',
@@ -762,11 +756,10 @@
                     }
                 });
 
-                if (!formValues) return; // User membatalkan aksi dialog modal
+                if (!formValues) return; 
 
                 showToast("Memproses data reschedule...", true);
 
-                // Format datetime-local ke format string mysql ("YYYY-MM-DD HH:mm:ss.SSS")
                 const d = new Date(formValues);
                 const formattedDate = d.getFullYear() + '-' +
                     String(d.getMonth() + 1).padStart(2, '0') + '-' +
@@ -785,15 +778,12 @@
                             date_booked: formattedDate
                         })
                     });
-                    
-                    // Update properti tanggal objek lokal sebelum dikirim ke API utama (PUT)
                     originObj.start_date = d.toISOString();
                 } catch (e) {
                     console.error("Gagal menembak API reschedule:", e);
                 }
             }
 
-            // LANJUTKAN EKSEKUSI DATA UTAMA KE DATABASE (PUT REQUEST)
             showToast("Updating status...", true);
 
             const payload = {
@@ -883,7 +873,7 @@
         setInterval(() => {
             fetchData();
             fetchReportData();
-        }, 20000); 
+        }, 5000); 
     </script>
 </body>
 </html>
