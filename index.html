@@ -38,6 +38,8 @@
         .btn-pagination:disabled {
             opacity: 0.3;
             cursor: not-allowed;
+            background-color: #f3f1eb !important;
+            color: #a8a296 !important;
         }
         .btn-pagination:not(:disabled):hover {
             background-color: #8fa88a;
@@ -339,7 +341,7 @@
                             <i class="fas fa-chevron-left text-xs"></i>
                         </button>
                         <div id="page-numbers" class="flex gap-2"></div>
-                        <button id="next-btn" onclick="changePage(Direction)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
+                        <button id="next-btn" onclick="changePage(1)" class="btn-pagination w-10 h-10 rounded-xl flex items-center justify-center text-amber-900">
                             <i class="fas fa-chevron-right text-xs"></i>
                         </button>
                     </div>
@@ -674,6 +676,12 @@
             const end = start + rowsPerPage;
             const paginatedItems = allData.slice(start, end);
 
+            if (paginatedItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 opacity-40 italic">Tidak ada data di halaman ini.</td></tr>`;
+                updatePaginationControls(start, end);
+                return;
+            }
+
             paginatedItems.forEach((item, index) => {
                 const formattedStatus = item.status ? item.status.replace(/\s+/g, '-').toLowerCase() : 'pending';
                 const statusClass = `status-${formattedStatus}`;
@@ -737,48 +745,18 @@
             }
 
             if (newStatus === 'Reschedule') {
-                const { value: formValues } = await Swal.fire({
-                    title: 'Atur Jadwal Ulang (Reschedule)',
-                    html: `
-                        <label class="block text-left text-xs font-bold text-slate-500 mb-1">PILIH TANGGAL & JAM BARU</label>
-                        <input type="datetime-local" id="swal-reschedule-date" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none">
-                    `,
-                    focusConfirm: false,
-                    showCancelButton: true,
-                    confirmButtonColor: '#a2c2cf',
-                    confirmButtonText: 'Simpan & Kirim API',
-                    preConfirm: () => {
-                        const dateVal = document.getElementById('swal-reschedule-date').value;
-                        if (!dateVal) {
-                            Swal.showValidationMessage('Tanggal baru wajib diisi!');
-                        }
-                        return dateVal;
-                    }
-                });
-
-                if (!formValues) return; 
-
-                showToast("Memproses data reschedule...", true);
-
-                const d = new Date(formValues);
-                const formattedDate = d.getFullYear() + '-' +
-                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(d.getDate()).padStart(2, '0') + ' ' +
-                    String(d.getHours()).padStart(2, '0') + ':' +
-                    String(d.getMinutes()).padStart(2, '0') + ':00.000';
-
+                showToast("Memproses reschedule otomatis...", true);
                 try {
-                    await fetch(API_RESCHEDULE_TRIGGER, {
+                    fetch(API_RESCHEDULE_TRIGGER, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name_customer: originObj.customer_name,
                             number_customer: originObj.phone_number || originObj.customer_phone || "6281246746772",
                             name_anabul: originObj.pet_name,
-                            date_booked: formattedDate
+                            date_booked: originObj.start_date 
                         })
                     });
-                    originObj.start_date = d.toISOString();
                 } catch (e) {
                     console.error("Gagal menembak API reschedule:", e);
                 }
@@ -849,7 +827,10 @@
         function updatePaginationControls(start, end) {
             const totalPages = Math.ceil(allData.length / rowsPerPage);
             const actualEnd = end > allData.length ? allData.length : end;
+            
             document.getElementById('page-range').innerText = `${allData.length === 0 ? 0 : start + 1} - ${actualEnd}`;
+            
+            // Perbaikan Logika Tombol Disable/Enable
             document.getElementById('prev-btn').disabled = currentPage === 1;
             document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
 
@@ -857,19 +838,31 @@
             pageNumbers.innerHTML = `<span class="w-10 h-10 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-sm border border-amber-100">${currentPage}</span>`;
         }
 
+        // Fungsi Perpindahan Halaman Standar (Diperbaiki)
+        function changePage(direction) { 
+            const totalPages = Math.ceil(allData.length / rowsPerPage);
+            const targetPage = currentPage + direction;
+            
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage; 
+                renderTable(); 
+            }
+        }
+
         document.body.addEventListener('click', function(e) {
              const modal = document.getElementById('status-modal');
              if(!modal.contains(e.target)) modal.classList.add('hidden');
         }, true);
 
-        changePage = (direction) => { currentPage += direction; renderTable(); };
-        formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
-        formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
+        const formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+        const formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
         function escapeHTML(str) { return (str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
 
+        // Panggilan Awal Saat Halaman Pertama Kali Dibuka
         fetchData();
         fetchReportData();
         
+        // Loop Sinkronisasi Data Live Setiap 5 Detik
         setInterval(() => {
             fetchData();
             fetchReportData();
