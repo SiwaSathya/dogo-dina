@@ -193,6 +193,23 @@
                     </div>
                 </div>
 
+                <div class="bg-green-50 p-4 rounded-2xl border border-green-100">
+                    <span class="block text-[10px] font-bold text-green-900/50 uppercase tracking-wider mb-2">Nomor Customer</span>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="font-bold text-green-800 text-sm font-mono truncate" id="detail-customer-number">-</span>
+                        <a
+                            id="btn-contact-customer"
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-sm whitespace-nowrap"
+                        >
+                            <i class="fab fa-whatsapp"></i>
+                            Hubungi
+                        </a>
+                    </div>
+                </div>
+
                 <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/40">
                     <span class="block text-[10px] font-bold text-amber-900/40 uppercase tracking-wider mb-1.5">Layanan Terpilih</span>
                     <div class="flex justify-between items-center">
@@ -622,6 +639,20 @@
                     if (data) {
                         document.getElementById('detail-customer').innerText = data.customer_name || '-';
                         document.getElementById('detail-pet').innerText = data.pet_name || '-';
+
+                        const customerNumber = normalizeCustomerNumber(data.customer_number);
+                        const contactButton = document.getElementById('btn-contact-customer');
+
+                        document.getElementById('detail-customer-number').innerText = customerNumber || 'Nomor belum tersedia';
+
+                        if (customerNumber) {
+                            contactButton.href = buildWhatsAppLink(customerNumber, data.customer_name);
+                            contactButton.classList.remove('opacity-40', 'pointer-events-none');
+                        } else {
+                            contactButton.href = '#';
+                            contactButton.classList.add('opacity-40', 'pointer-events-none');
+                        }
+
                         document.getElementById('detail-service').innerText = data.service_name || 'N/A';
                         document.getElementById('detail-price').innerText = `Rp ${(data.service_price || data.price || 0).toLocaleString('id-ID')}`;
                         document.getElementById('detail-start').innerText = formatDate(data.start_date);
@@ -736,7 +767,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name_customer: originObj.customer_name,
-                            number_customer: originObj.phone_number || originObj.customer_phone || "62881037634852"
+                            number_customer: normalizeCustomerNumber(originObj.customer_number || originObj.phone_number || originObj.customer_phone)
                         })
                     });
                 } catch (e) {
@@ -752,7 +783,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name_customer: originObj.customer_name,
-                            number_customer: originObj.phone_number || originObj.customer_phone || "62881037634852",
+                            number_customer: normalizeCustomerNumber(originObj.customer_number || originObj.phone_number || originObj.customer_phone),
                             name_anabul: originObj.pet_name,
                             date_booked: originObj.start_date 
                         })
@@ -853,6 +884,31 @@
              const modal = document.getElementById('status-modal');
              if(!modal.contains(e.target)) modal.classList.add('hidden');
         }, true);
+
+        function normalizeCustomerNumber(number) {
+            if (!number) return "";
+
+            let cleanNumber = String(number).replace(/\D/g, "");
+
+            if (cleanNumber.startsWith("0")) {
+                cleanNumber = "62" + cleanNumber.slice(1);
+            }
+
+            if (!cleanNumber.startsWith("62")) {
+                cleanNumber = "62" + cleanNumber;
+            }
+
+            return cleanNumber;
+        }
+
+        function buildWhatsAppLink(number, customerName = "") {
+            const cleanNumber = normalizeCustomerNumber(number);
+
+            if (!cleanNumber) return "#";
+
+            const message = `Halo ${customerName || "Kak"}, kami dari Max Grooming ingin menghubungi terkait booking grooming Kakak.`;
+            return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+        }
 
         const formatDate = (dateStr) => { if(!dateStr) return "-"; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
         const formatToM = (value) => { const millions = value / 1000000; return millions >= 1 ? `Rp ${millions.toFixed(1)}M` : `Rp ${value.toLocaleString('id-ID')}`; };
